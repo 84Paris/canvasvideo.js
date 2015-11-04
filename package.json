@@ -1,0 +1,30 @@
+{
+  "name": "canvasvideo.js",
+  "version": "0.1.0",
+  "author": "Jean-Vincent Roger - jv.roger@84paris.com",
+  "description": "canvasvideo.js is a lightweight library to play video file in a canvas element with audio support.",
+  "main": "src/media/CanvasVideo.js",
+  "bin": "bin/canvasvideo.min.js",
+  "scripts": {
+    "bundle": "browserify src/media/CanvasVideo.js -x howler --standalone CanvasVideo -o bin/canvasvideo.js",
+    "uglify": "uglifyjs bin/canvasvideo.js -m -o bin/canvasvideo.min.js",
+    "build": "npm run bundle; npm run uglify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/84Paris/canvasvideo.js.git"
+  },
+  "keywords": [
+    "canvasvideo",
+    "inline video",
+    "video",
+    "canvas",
+    "inline",
+    "iphone",
+    "ios",
+    "browserify"
+  ],
+  "dependencies": {
+    "howler": "^1.1.28"
+  }
+}
