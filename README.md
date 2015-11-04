@@ -18,19 +18,11 @@ This library draw video element on a canvas and sync it with the audio (from the
 * supports xhr
 * similar methods/events of video DOM element
 
-### Examples ###
-
-TODO
-
 ### References ###
 
 * [because-recollection.com](http://www.because-recollection.com)
 
 ## Getting started ##
-
-### Installation  ###
-
-TODO
 
 ### Import  ###
 
@@ -158,18 +150,23 @@ var video = new CanvasVideo ( src, options );
 * **play:** Begins playback of video & audio.
 * **pause:** Pauses playback of video & audio.
 * **destroy:** Destroy properly the CanvasVideo element.
+* **canPlayType:** Checks if the browser can play the specified audio/video type.
 
 ### Properties ###
 
 * **currentTime:** `Number` Get/set the current time of the canvasvideo.
 * **volume:** `Number` Get/set the video audio volume.
+* **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
 * **loop:** `Boolean` Get/set the loop parameter.
+* **duration:** `Number` Returns the length of the current audio/video (in seconds).
+* **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
 * **width:** `Number` Get/set the canvasvideo width.
 * **height:** `Number` Get/set the canvasvideo height.
 * **videoWidth:** `Number` Get the original video width.
 * **videoHeight:** `Number` Get the original video height.
 * **xhr:** `Boolean` Get the xhr parameter.
 * **fps:** `Number` Get the FPS.
+* **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
 
 ### Events ###
 
@@ -184,10 +181,6 @@ Tested in the following browsers/versions:
 
 * Mobile iOS 8.0+
 
-
-### Contributors ###
-
-* Jean-Vincent Roger ([@soker84](https://www.twitter.com/soker84))
 
 ### License ###
 

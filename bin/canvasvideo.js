@@ -276,16 +276,12 @@ function AudioPlayer ( src, options )
             urls:[src],
             format:'mp4',
             onload:canPlay,
-            loop: true,
+            loop: that.options.loop,
+            volume: that.options.volume,
             onend: function(e){
                 that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
             }
         }).load();
-    }
-
-    this.load = function ()
-    {
-        sound.load ();
     }
 
     this.play = function ()
@@ -300,7 +296,7 @@ function AudioPlayer ( src, options )
 
     this.destroy = function ()
     {
-        unbind ();
+        sound.unload ();
     }
 
     /********************************************************************************
@@ -309,9 +305,11 @@ function AudioPlayer ( src, options )
 
     Object.defineProperty( that, 'loop', {
         get: function() {
-
+            return that.options.loop;
         },
         set: function(value) {
+            that.options.loop = value;
+            sound.loop = value;
         }
     });
 
@@ -325,21 +323,23 @@ function AudioPlayer ( src, options )
         }
     });
 
+
+    Object.defineProperty( that, 'volume', {
+        get: function() {
+            return sound?sound.volume:1;
+        },
+        set: function(value) {
+            that.options.volume = value;
+            sound.volume = value;
+        }
+    });
+
+
     /********************************************************************************
     // PRIVATES
     /********************************************************************************/
 
-    function bind () {
-        //sound.addEventListener ( 'canplay', function(){} );
-        // sound.addEventListener ( 'canplaythrough', canPlay );
-        // sound.addEventListener ( 'ended', function(e){
-        //     that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
-        // })
-    }
 
-    function unbind () {
-
-    }
 
 
     /********************************************************************************
@@ -348,7 +348,6 @@ function AudioPlayer ( src, options )
 
     function canPlay (e)
     {
-        console.log('loaded');
         that.dispatchEvent ( new Event( CanvasVideoEvent.CAN_PLAY, {} ) );
     }
 
@@ -387,15 +386,16 @@ function CanvasVideo ( src, options )
     var that = this;
 
     var canvas, video, sound;
-    var videoReady = false,
-        audioReady = false,
-        isPlaying  = false;
+    var videoReady  = false,
+        audioReady  = false,
+        readyToPlay = false,
+        isPlaying   = false;
 
     var lastTime, time, elapsed;
     var currentTime = 0,
         needTouchDevice;
 
-    var loaded = false;
+    var built = false;
     var seeking = false;
 
     this.options = {
@@ -426,34 +426,43 @@ function CanvasVideo ( src, options )
         if ( that.options.width ) that.element.width = that.options.width;
         if ( that.options.height ) that.element.height = that.options.height;
 
-
         if ( that.options.preload == true ) that.load ();
     }
 
-    // gerer le cas où cette methode à déjà été appelé
+
     this.load = function ()
     {
-        if ( that.options.xhr )
+        if ( !built )
         {
-            xhrPreload (src);
-        }
-        else
-        {
-            build (src);
+            if ( that.options.xhr )
+            {
+                xhrPreload (src);
+            }
+            else
+            {
+                build (src);
+            }
         }
     }
 
     // gerer le cas de n'est pas encore loadé.
     this.play = function ()
     {
-        isPlaying = true;
-        lastTime = Date.now();
-        if ( sound ) {
-            lastTime = sound.currentTime;
-            sound.play ();
+        if ( built && readyToPlay )
+        {
+            isPlaying = true;
+            lastTime = Date.now();
+            if ( sound ) {
+                lastTime = sound.currentTime;
+                sound.play ();
+            }
+            draw();
+            calculate ();
         }
-        draw();
-        calculate ();
+        else {
+            that.options.autoplay = true;
+            if (!built) this.load ();
+        }
     }
 
     this.pause = function ()
@@ -475,6 +484,14 @@ function CanvasVideo ( src, options )
         Utils.removeVideoElement (video);
         unbind ();
         video = null;
+    }
+
+    this.canPlayType = function ( type )
+    {
+        var v;
+        if (video) v = video;
+        else v = document.createElement('video');
+        return v.canPlayType ( type );
     }
 
     /********************************************************************************
@@ -537,19 +554,28 @@ function CanvasVideo ( src, options )
 
     Object.defineProperty( that, 'volume', {
         get: function() {
-
+            return that.options.volume;
         },
         set: function(value) {
-
+            that.options.volume = value;
+            if (sound) sound.volume = value;
         }
     });
 
     Object.defineProperty( that, 'muted', {
         get: function() {
-
+            if ( !sound || sound.volume != 0 ) return false;
+            else return true;
         },
         set: function(value) {
-
+            if (value)
+            {
+                if (sound) sound.volume = 0;
+            }
+            else
+            {
+                if (sound) sound.volume = that.options.volume;
+            }
         }
     });
 
@@ -582,9 +608,24 @@ function CanvasVideo ( src, options )
 
     Object.defineProperty( that, 'duration', {
         get: function() {
-
+            if (video) return video.duration;
+            else return NaN;
         }
     });
+
+    Object.defineProperty( that, 'seeking', {
+        get: function() {
+            return seeking;
+        }
+    });
+
+
+    Object.defineProperty( that, 'readyState', {
+        get: function() {
+            return readyToPlay?4:0;
+        }
+    });
+
 
     Object.defineProperty( that, 'controls', {
         get: function() {
@@ -675,6 +716,8 @@ function CanvasVideo ( src, options )
 
     function bothReady ()
     {
+        readyToPlay = true;
+
         if ( !that.options.width ) that.element.width = video.videoWidth;
         if ( !that.options.height ) that.element.height = video.videoHeight;
 
@@ -689,7 +732,7 @@ function CanvasVideo ( src, options )
     function build (src)
     {
 
-        loaded = true;
+        built = true;
 
         // create video element
         video = createVideoElement ( src );
@@ -705,7 +748,7 @@ function CanvasVideo ( src, options )
 
         // gestion de l'audio.
         if (that.options.audio) {
-            sound = new AudioPlayer ( getAudioSrc () );
+            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }

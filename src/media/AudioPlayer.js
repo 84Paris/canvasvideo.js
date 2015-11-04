@@ -37,16 +37,12 @@ function AudioPlayer ( src, options )
             urls:[src],
             format:'mp4',
             onload:canPlay,
-            loop: true,
+            loop: that.options.loop,
+            volume: that.options.volume,
             onend: function(e){
                 that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
             }
         }).load();
-    }
-
-    this.load = function ()
-    {
-        sound.load ();
     }
 
     this.play = function ()
@@ -61,7 +57,7 @@ function AudioPlayer ( src, options )
 
     this.destroy = function ()
     {
-        unbind ();
+        sound.unload ();
     }
 
     /********************************************************************************
@@ -70,9 +66,11 @@ function AudioPlayer ( src, options )
 
     Object.defineProperty( that, 'loop', {
         get: function() {
-
+            return that.options.loop;
         },
         set: function(value) {
+            that.options.loop = value;
+            sound.loop = value;
         }
     });
 
@@ -86,21 +84,23 @@ function AudioPlayer ( src, options )
         }
     });
 
+
+    Object.defineProperty( that, 'volume', {
+        get: function() {
+            return sound?sound.volume:1;
+        },
+        set: function(value) {
+            that.options.volume = value;
+            sound.volume = value;
+        }
+    });
+
+
     /********************************************************************************
     // PRIVATES
     /********************************************************************************/
 
-    function bind () {
-        //sound.addEventListener ( 'canplay', function(){} );
-        // sound.addEventListener ( 'canplaythrough', canPlay );
-        // sound.addEventListener ( 'ended', function(e){
-        //     that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
-        // })
-    }
 
-    function unbind () {
-
-    }
 
 
     /********************************************************************************
@@ -109,7 +109,6 @@ function AudioPlayer ( src, options )
 
     function canPlay (e)
     {
-        console.log('loaded');
         that.dispatchEvent ( new Event( CanvasVideoEvent.CAN_PLAY, {} ) );
     }
 
