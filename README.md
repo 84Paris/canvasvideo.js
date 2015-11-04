@@ -161,7 +161,7 @@ var video = new CanvasVideo ( src, options );
 
 ### Properties ###
 
-* **currentTime:** `Number` Get/set the video audio volume.
+* **currentTime:** `Number` Get/set the current time of the canvasvideo.
 * **volume:** `Number` Get/set the video audio volume.
 * **loop:** `Boolean` Get/set the loop parameter.
 * **width:** `Number` Get/set the canvasvideo width.
