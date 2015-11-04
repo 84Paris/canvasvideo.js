@@ -359,7 +359,7 @@ AudioPlayer.prototype = Object.create ( EventDispatcher.prototype );
 AudioPlayer.prototype.constructor = AudioPlayer;
 module.exports = AudioPlayer;
 
-},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"howler":"howler"}],6:[function(require,module,exports){
+},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"howler":7}],6:[function(require,module,exports){
 /**
  * CanvasVideo
  *
@@ -889,5 +889,7 @@ CanvasVideo.prototype = Object.create ( EventDispatcher.prototype );
 CanvasVideo.prototype.constructor = CanvasVideo;
 module.exports = CanvasVideo;
 
-},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}]},{},[6])(6)
+},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}],7:[function(require,module,exports){
+
+},{}]},{},[6])(6)
 });

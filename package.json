@@ -6,7 +6,7 @@
   "main": "src/media/CanvasVideo.js",
   "bin": "bin/canvasvideo.min.js",
   "scripts": {
-    "bundle": "browserify src/media/CanvasVideo.js -x howler --standalone CanvasVideo -o bin/canvasvideo.js",
+    "bundle": "browserify src/media/CanvasVideo.js --ignore howler --standalone CanvasVideo -o bin/canvasvideo.js",
     "uglify": "uglifyjs bin/canvasvideo.js -m -o bin/canvasvideo.min.js",
     "build": "npm run bundle; npm run uglify"
   },
