@@ -16,7 +16,7 @@ This library draw video element on a canvas and sync it with the audio (from the
 * plays inline video file (mp4) with audio on iPhone (directly in the browser)
 * autoplays video without sound on iOS device (without touch event)
 * supports xhr
-* similar methods/events of video DOM element
+* similar methods/events to video DOM element
 
 ### References ###
 
@@ -136,37 +136,40 @@ var video = new CanvasVideo ( src, options );
     * **audio:** This parameter could be:
         * `Boolean` *(default: `false`)* Set to `true` to play audio channel of the video file.
         * `String` url of an audio file.
+    * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
+    * **fps:** `Number` *(default: `24.0`)* Frame per seconds (only use if `audio:false`).
+    * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.
+    * **preload:** `Boolean` *(default: `false`)* Set to true to automatically load when canvasvideo is create.
+    * **volume:** `Number` *(default: `1.0`)* Set the default volume of the audio.
     * **xhr:** `Boolean` *(default: `false`)* fully preload video/audio file(s).
         * Recommanded if `audio:true` to not preload the video file twice (as video element and as audio element).
-    * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.
-    * **fps:** `Number` *(default: `24.0`)* Frame per seconds (only use if `audio:false`).
-    * **volume:** `Number` *(default: `1.0`)* Set the default volume of the audio.
-    * **preload:** `Boolean` *(default: `false`)* Set to true to automatically load when canvasvideo is create.
-    * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing as soon as it is loaded.
+
 
 ### Methods ###
 
-* **load:** Begins preload of video & audio.
-* **play:** Begins playback of video & audio.
-* **pause:** Pauses playback of video & audio.
-* **destroy:** Destroy properly the CanvasVideo element.
 * **canPlayType:** Checks if the browser can play the specified audio/video type.
+* **destroy:** Destroy properly the CanvasVideo element.
+* **load:** Begins preload of video & audio.
+* **pause:** Pauses playback of video & audio.
+* **play:** Begins playback of video & audio.
+
 
 ### Properties ###
 
 * **currentTime:** `Number` Get/set the current time of the canvasvideo.
-* **volume:** `Number` Get/set the video audio volume.
-* **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
-* **loop:** `Boolean` Get/set the loop parameter.
 * **duration:** `Number` Returns the length of the current audio/video (in seconds).
-* **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
-* **width:** `Number` Get/set the canvasvideo width.
-* **height:** `Number` Get/set the canvasvideo height.
-* **videoWidth:** `Number` Get the original video width.
-* **videoHeight:** `Number` Get the original video height.
-* **xhr:** `Boolean` Get the xhr parameter.
 * **fps:** `Number` Get the FPS.
+* **height:** `Number` Get/set the canvasvideo height.
+* **loop:** `Boolean` Get/set the loop parameter.
+* **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
 * **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
+* **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
+* **videoHeight:** `Number` Get the original video height.
+* **videoWidth:** `Number` Get the original video width.
+* **volume:** `Number` Get/set the video audio volume.
+* **width:** `Number` Get/set the canvasvideo width.
+* **xhr:** `Boolean` Get the xhr parameter.
+
 
 ### Events ###
 
@@ -177,7 +180,7 @@ var video = new CanvasVideo ( src, options );
 
 ### Browser Compatibility ###
 
-Tested in the following browsers/versions:
+Tested in the following browsers/OS:
 
 * Mobile iOS 8.0+
 
