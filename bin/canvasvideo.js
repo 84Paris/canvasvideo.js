@@ -448,7 +448,7 @@ function CanvasVideo ( src, options )
     // gerer le cas de n'est pas encore loadé.
     this.play = function ()
     {
-        if ( built && readyToPlay && !isPlaying )
+        if ( built && readyToPlay )
         {
             isPlaying = true;
             lastTime = Date.now();
