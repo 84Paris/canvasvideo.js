@@ -680,7 +680,7 @@ function CanvasVideo ( src, options )
             var duration = (Math.round(parseFloat(video.duration)*10000)/10000);
             if(currentTime >= duration) {
                 //console.log('currentTime: ' + currentTime + ' duration: ' + video.duration);
-                that.dispatchEvent ( new Event ( CanvasVideoEvent.ENDED ));
+                if ( !that.options.audio ) that.dispatchEvent ( new Event ( CanvasVideoEvent.ENDED ));
                 if ( that.options.loop )
                 {
                     if ( !that.options.audio ) {
