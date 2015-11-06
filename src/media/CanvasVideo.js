@@ -514,7 +514,6 @@ function CanvasVideo ( src, options )
 
     function videoCanPlay (e)
     {
-        console.log ( 'canplay' );
         if ( !videoReady )
         {
             videoReady = true;
