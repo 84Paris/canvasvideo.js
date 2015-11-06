@@ -87,7 +87,7 @@ function CanvasVideo ( src, options )
     // gerer le cas de n'est pas encore loadé.
     this.play = function ()
     {
-        if ( built && readyToPlay )
+        if ( built && readyToPlay && !isPlaying )
         {
             isPlaying = true;
             lastTime = Date.now();
@@ -97,6 +97,7 @@ function CanvasVideo ( src, options )
             }
             draw();
             calculate ();
+            that.dispatchEvent (new Event('play'));
         }
         else {
             that.options.autoplay = true;
@@ -107,6 +108,7 @@ function CanvasVideo ( src, options )
     this.pause = function ()
     {
         isPlaying = false;
+        that.dispatchEvent (new Event('pause'));
         if ( sound )
         {
             sound.pause ();

@@ -175,7 +175,9 @@ var video = new CanvasVideo ( src, options );
 
 * **canplaythrough/canplay:** Fires when the browser can play through the video/audio without stopping for buffering.
 * **ended:** Fires when the current playlist is ended.
+* **play:** Fires when the audio/video has been started or is no longer paused.
 * **progress:** Fires when the browser is downloading the audio/video.
+* **timeupdate:** Fires when the current playback position has changed.
 
 
 ### Browser Compatibility ###
