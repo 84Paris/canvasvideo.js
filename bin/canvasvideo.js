@@ -1,4 +1,6 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.CanvasVideo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CanvasVideo = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+
+},{}],2:[function(require,module,exports){
 /**
  * Utils methods.
  *
@@ -89,7 +91,7 @@ module.exports = Utils;
 
 
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /**
  * CanvasVideoEvent types
  *
@@ -114,7 +116,7 @@ module.exports = CanvasVideoEvent;
 
 
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /**
  * Event base class
  *
@@ -137,7 +139,7 @@ function Event ( type, datas )
 Event.prototype.constructor = Event;
 module.exports = Event;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /**
  * EventDispatcher for custom class
  *
@@ -236,7 +238,7 @@ EventDispatcher.prototype = {
 
 module.exports = EventDispatcher;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /**
  * AudioPlayer
  *
@@ -358,7 +360,7 @@ AudioPlayer.prototype = Object.create ( EventDispatcher.prototype );
 AudioPlayer.prototype.constructor = AudioPlayer;
 module.exports = AudioPlayer;
 
-},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"howler":7}],6:[function(require,module,exports){
+},{"../event/CanvasVideoEvent":3,"../event/Event":4,"../event/EventDispatcher":5,"howler":1}],7:[function(require,module,exports){
 /**
  * CanvasVideo
  *
@@ -478,6 +480,7 @@ function CanvasVideo ( src, options )
 
     this.destroy = function ()
     {
+        isPlaying = false;
         if ( sound )
         {
             sound.destroy ();
@@ -933,7 +936,5 @@ CanvasVideo.prototype = Object.create ( EventDispatcher.prototype );
 CanvasVideo.prototype.constructor = CanvasVideo;
 module.exports = CanvasVideo;
 
-},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}],7:[function(require,module,exports){
-
-},{}]},{},[6])(6)
+},{"../core/Utils":2,"../event/CanvasVideoEvent":3,"../event/Event":4,"../event/EventDispatcher":5,"./AudioPlayer":6}]},{},[7])(7)
 });

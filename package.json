@@ -24,6 +24,10 @@
     "ios",
     "browserify"
   ],
+  "devDependencies": {
+    "browserify": "^12.0.1",
+    "uglifyjs": "^2.4.10"
+  },
   "dependencies": {
     "howler": "^1.1.28"
   }
