@@ -117,6 +117,7 @@ function CanvasVideo ( src, options )
 
     this.destroy = function ()
     {
+        isPlaying = false;
         if ( sound )
         {
             sound.destroy ();
