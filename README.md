@@ -18,7 +18,7 @@ This library draw video element on a canvas and sync it with the audio (from the
 * supports xhr
 * similar methods/events to video DOM element
 
-### References ###
+### Featured project ###
 
 * [because-recollection.com](http://www.because-recollection.com)
 
@@ -28,7 +28,7 @@ This library draw video element on a canvas and sync it with the audio (from the
 
 You can import canvasvideo.js as a Browserify module.
 ```js
-var CanvasVideo = require ('canvasvideo.js');
+var CanvasVideo = require('canvasvideo.js');
 ```
 or with a classic script tag.
 ```js
@@ -38,20 +38,20 @@ or with a classic script tag.
 ### Basic usage example  ###
 
 ```js
-var video = new CanvasVideo ( './videos/file.mp4', {audio:true, xhr:true} );
-video.addEventListener ( 'canplaythrough', onLoaded );
-video.load ();
+var video = new CanvasVideo('./videos/file.mp4', {audio:true, xhr:true});
+video.addEventListener('canplaythrough', onLoaded);
+video.load();
 
-function onLoaded (e)
+function onLoaded(e)
 {
-	document.body.appendChild ( video.element );
-	if( !video.needTouch ) video.play ();
-    else document.body.addEventListener ('touchend', playVideo );
+	document.body.appendChild(video.element);
+	if (!video.needTouch) video.play();
+    else document.body.addEventListener('touchend', playVideo);
 }
 
-function playVideo ()
+function playVideo()
 {
-    video.play ();
+    video.play();
 }
 ```
 
@@ -63,8 +63,8 @@ var options = {
     preload: true,
     autoplay: true
 }
-var video = new CanvasVideo ( './videos/file.mp4', options );
-document.body.appendChild ( video.element );
+var video = new CanvasVideo('./videos/file.mp4', options);
+document.body.appendChild(video.element);
 ```
 
 ### Video with mp3 file  ###
@@ -74,20 +74,20 @@ var options = {
     audio: './sound/file.mp3',
     loop: true
 }
-var video = new CanvasVideo ( './videos/file.mp4', options );
-video.addEventListener ( 'canplaythrough', onLoaded );
+var video = new CanvasVideo('./videos/file.mp4', options);
+video.addEventListener('canplaythrough', onLoaded);
 video.load ();
 
-function onLoaded (e)
+function onLoaded(e)
 {
-    document.body.appendChild ( video.element );
-    if( !video.needTouch ) video.play ();
-    else document.body.addEventListener ('touchend', playVideo );
+    document.body.appendChild(video.element);
+    if (!video.needTouch) video.play();
+    else document.body.addEventListener('touchend', playVideo);
 }
 
-function playVideo ()
+function playVideo()
 {
-    video.play ();
+    video.play();
 }
 
 ```
@@ -100,20 +100,20 @@ function playVideo ()
 </video>
 
 <script>
-    var video = document.getElementByID ('myvideo');
-    if ( navigator.userAgent.toLowerCase().indexOf('iphone') >= 0 )
+    var video = document.getElementByID('myvideo');
+    if (navigator.userAgent.toLowerCase().indexOf('iphone') >= 0)
     {
-        document.body.removeChild ( video );
-        video = new CanvasVideo ( video );
-        document.body.appendChild ( video.element );
+        document.body.removeChild(video);
+        video = new CanvasVideo(video);
+        document.body.appendChild(video.element);
     }
-    video.addEventListener ( 'canplaythrough', onLoaded );
-    video.load ();
+    video.addEventListener('canplaythrough', onLoaded);
+    video.load();
 
-    function onLoaded (e)
+    function onLoaded(e)
     {
-        console.log ( video.loop ); // true
-        video.play ();
+        console.log(video.loop); // true
+        video.play();
     }
 </script>
 ```
@@ -122,7 +122,7 @@ function playVideo ()
 
 ### Constructor ###
 ```js
-var video = new CanvasVideo ( src, options );
+var video = new CanvasVideo(src, options);
 ```
 * **src:** This parameter could be:
     * `String` url of a video file.
