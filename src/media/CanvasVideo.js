@@ -43,7 +43,8 @@ function CanvasVideo ( src, options )
         hideVideoElement: true,
         xhr: false,
         autoplay: false,
-        volume: 1
+        volume: 1,
+        playbackRate: 1
     };
 
 
@@ -162,7 +163,6 @@ function CanvasVideo ( src, options )
         }
     });
 
-
     Object.defineProperty( that, 'videoWidth', {
         get: function() {
             return video.videoWidth;
@@ -174,7 +174,6 @@ function CanvasVideo ( src, options )
             return video.videoHeight;
         }
     });
-
 
     Object.defineProperty( that, 'fps', {
         get: function() {
@@ -227,7 +226,6 @@ function CanvasVideo ( src, options )
         }
     });
 
-
     // A affiner.
     Object.defineProperty( that, 'currentTime', {
         get: function() {
@@ -261,13 +259,25 @@ function CanvasVideo ( src, options )
         }
     });
 
+    Object.defineProperty( that, 'playbackRate', {
+        get: function() {
+            return that.options.playbackRate;
+        },
+        set: function(value) {
+            //if ( video ) video.playbackRate = value;
+            that.options.playbackRate = value;
+            if (that.options.audio)
+            {
+                if (sound) sound.playbackRate = value;
+            }
+        }
+    });
 
     Object.defineProperty( that, 'readyState', {
         get: function() {
             return readyToPlay?4:0;
         }
     });
-
 
     Object.defineProperty( that, 'controls', {
         get: function() {
@@ -311,9 +321,16 @@ function CanvasVideo ( src, options )
             }
 
             if(elapsed >= ((1000/that.options.fps)/1000)) {
-                video.currentTime = video.currentTime + elapsed;
-                if ( that.options.audio ) lastTime = video.currentTime;
-                else lastTime = time;
+                if ( !that.options.audio )
+                {
+                    video.currentTime = (video.currentTime + (elapsed*that.options.playbackRate));
+                    lastTime = time;
+                }
+                else
+                {
+                    video.currentTime = (video.currentTime + elapsed);
+                    lastTime = video.currentTime;
+                }
             }
             // if we are at the end of the video stop
             currentTime = (Math.round(parseFloat(video.currentTime)*10000)/10000);
@@ -382,6 +399,7 @@ function CanvasVideo ( src, options )
         if ( !that.options.id ) that.id = video.id ? video.id : Utils.uid();
         else that.id = that.options.id;
         video.id = that.id;
+        //video.playbackRate = that.options.playbackRate;
         //document.body.appendChild ( video );
         //if(that.options.hideVideoElement) video.style.display = "none";
         setTimeout ( function(){
@@ -390,12 +408,11 @@ function CanvasVideo ( src, options )
 
         // gestion de l'audio.
         if (that.options.audio) {
-            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume } );
+            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }
     }
-
 
 
     // traitement url

@@ -162,6 +162,7 @@ var video = new CanvasVideo(src, options);
 * **height:** `Number` Get/set the canvasvideo height.
 * **loop:** `Boolean` Get/set the loop parameter.
 * **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
+* **playbackRate:** `Number` Sets or returns the speed of the audio/video playback (not working yet with audio).
 * **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
 * **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
 * **videoHeight:** `Number` Get the original video height.
@@ -190,5 +191,3 @@ Tested in the following browsers/OS:
 ### License ###
 
 This content is released under the (http://opensource.org/licenses/MIT) MIT License.
-
-

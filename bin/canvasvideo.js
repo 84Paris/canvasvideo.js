@@ -1,6 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CanvasVideo = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-},{}],2:[function(require,module,exports){
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.CanvasVideo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /**
  * Utils methods.
  *
@@ -91,7 +89,7 @@ module.exports = Utils;
 
 
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 /**
  * CanvasVideoEvent types
  *
@@ -116,7 +114,7 @@ module.exports = CanvasVideoEvent;
 
 
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /**
  * Event base class
  *
@@ -139,7 +137,7 @@ function Event ( type, datas )
 Event.prototype.constructor = Event;
 module.exports = Event;
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /**
  * EventDispatcher for custom class
  *
@@ -238,7 +236,7 @@ EventDispatcher.prototype = {
 
 module.exports = EventDispatcher;
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /**
  * AudioPlayer
  *
@@ -360,7 +358,7 @@ AudioPlayer.prototype = Object.create ( EventDispatcher.prototype );
 AudioPlayer.prototype.constructor = AudioPlayer;
 module.exports = AudioPlayer;
 
-},{"../event/CanvasVideoEvent":3,"../event/Event":4,"../event/EventDispatcher":5,"howler":1}],7:[function(require,module,exports){
+},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"howler":7}],6:[function(require,module,exports){
 /**
  * CanvasVideo
  *
@@ -406,7 +404,8 @@ function CanvasVideo ( src, options )
         hideVideoElement: true,
         xhr: false,
         autoplay: false,
-        volume: 1
+        volume: 1,
+        playbackRate: 1
     };
 
 
@@ -525,7 +524,6 @@ function CanvasVideo ( src, options )
         }
     });
 
-
     Object.defineProperty( that, 'videoWidth', {
         get: function() {
             return video.videoWidth;
@@ -537,7 +535,6 @@ function CanvasVideo ( src, options )
             return video.videoHeight;
         }
     });
-
 
     Object.defineProperty( that, 'fps', {
         get: function() {
@@ -590,7 +587,6 @@ function CanvasVideo ( src, options )
         }
     });
 
-
     // A affiner.
     Object.defineProperty( that, 'currentTime', {
         get: function() {
@@ -624,13 +620,25 @@ function CanvasVideo ( src, options )
         }
     });
 
+    Object.defineProperty( that, 'playbackRate', {
+        get: function() {
+            return that.options.playbackRate;
+        },
+        set: function(value) {
+            //if ( video ) video.playbackRate = value;
+            that.options.playbackRate = value;
+            if (that.options.audio)
+            {
+                if (sound) sound.playbackRate = value;
+            }
+        }
+    });
 
     Object.defineProperty( that, 'readyState', {
         get: function() {
             return readyToPlay?4:0;
         }
     });
-
 
     Object.defineProperty( that, 'controls', {
         get: function() {
@@ -674,9 +682,16 @@ function CanvasVideo ( src, options )
             }
 
             if(elapsed >= ((1000/that.options.fps)/1000)) {
-                video.currentTime = video.currentTime + elapsed;
-                if ( that.options.audio ) lastTime = video.currentTime;
-                else lastTime = time;
+                if ( !that.options.audio )
+                {
+                    video.currentTime = (video.currentTime + (elapsed*that.options.playbackRate));
+                    lastTime = time;
+                }
+                else
+                {
+                    video.currentTime = (video.currentTime + elapsed);
+                    lastTime = video.currentTime;
+                }
             }
             // if we are at the end of the video stop
             currentTime = (Math.round(parseFloat(video.currentTime)*10000)/10000);
@@ -745,6 +760,7 @@ function CanvasVideo ( src, options )
         if ( !that.options.id ) that.id = video.id ? video.id : Utils.uid();
         else that.id = that.options.id;
         video.id = that.id;
+        //video.playbackRate = that.options.playbackRate;
         //document.body.appendChild ( video );
         //if(that.options.hideVideoElement) video.style.display = "none";
         setTimeout ( function(){
@@ -753,12 +769,11 @@ function CanvasVideo ( src, options )
 
         // gestion de l'audio.
         if (that.options.audio) {
-            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume } );
+            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }
     }
-
 
 
     // traitement url
@@ -936,5 +951,7 @@ CanvasVideo.prototype = Object.create ( EventDispatcher.prototype );
 CanvasVideo.prototype.constructor = CanvasVideo;
 module.exports = CanvasVideo;
 
-},{"../core/Utils":2,"../event/CanvasVideoEvent":3,"../event/Event":4,"../event/EventDispatcher":5,"./AudioPlayer":6}]},{},[7])(7)
+},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}],7:[function(require,module,exports){
+
+},{}]},{},[6])(6)
 });
