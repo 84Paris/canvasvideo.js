@@ -46,7 +46,8 @@ function CanvasVideo ( src, options )
         volume: 1,
         playbackRate: 1
     };
-
+    
+    this.src = src;
 
     function _constructor ( src, options )
     {
