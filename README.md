@@ -18,11 +18,22 @@ This library draw video element on a canvas and sync it with the audio (from the
 * supports xhr
 * similar methods/events to video DOM element
 
+### Demonstration ###
+
+* [Simple example](#)
+* [Events & methods sandbox](#)
+
 ### Featured project ###
 
 * [because-recollection.com](http://www.because-recollection.com)
 
 ## Getting started ##
+
+### Installation ###
+
+```js
+npm i git+ssh://git@github.com:84Paris/canvasvideo.js.git#howler-version --save
+```
 
 ### Import  ###
 
