@@ -79,11 +79,11 @@ var Utils = {
             return !!audioTest.canPlayType( type ).replace(/^no$/, '');
         }
 
-    }
+    },
+
+    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false
 
 
 }
 
 module.exports = Utils;
-
-

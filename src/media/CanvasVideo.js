@@ -46,20 +46,20 @@ function CanvasVideo ( src, options )
         volume: 1,
         playbackRate: 1
     };
-    
+
     this.src = src;
 
     function _constructor ( src, options )
     {
-        needTouchDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false;
+        needTouchDevice = Utils.isIOSdevice;
 
         // copy options
         for (var i in options) {
             that.options[i] = options[i];
         }
-
+        
         // if audio driving, increase FPS for smouth
-        if( that.options.audio ) that.options.fps = 60;
+        if( that.options.audio && !options.fps ) that.options.fps = 45;
 
         that.element = document.createElement ('canvas');
         that.ctx     = that.element.getContext('2d');
@@ -360,8 +360,6 @@ function CanvasVideo ( src, options )
     function draw ()
     {
         that.ctx.drawImage( video, 0, 0, video.width, video.height );
-        //that.ctx.drawImage( video, 0, 0, that.element.width, that.element.height );
-
         that.dispatchEvent ( new Event( 'timeupdate' ) );
 
         if (seeking)
@@ -391,9 +389,7 @@ function CanvasVideo ( src, options )
 
     function build (src)
     {
-
         built = true;
-
         // create video element
         video = createVideoElement ( src );
         bind ();
@@ -419,14 +415,15 @@ function CanvasVideo ( src, options )
     // traitement url
     function xhrPreload (src)
     {
-        var url = src;
+        var videoInfos = getVideoInfos(src);
+        var url = videoInfos.src;
+        var mime = videoInfos.mime;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         //xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
         xhr.responseType = "arraybuffer";
 
         xhr.onload = function(oEvent) {
-            var mime = "video/"+Utils.getExtension(url);
             var blob = URL.createObjectURL( new Blob([oEvent.target.response], {type: mime}) );
             build ( {src:blob, mime:mime} );
         };
@@ -467,7 +464,7 @@ function CanvasVideo ( src, options )
             v = document.createElement('video');
             for (var i = 0; i < src.length; ++i)
             {
-                if ( typeof src === 'string' )
+                if ( typeof src[i] === 'string' )
                 {
                     v.appendChild( createSourceElement( src[i] ) );
                 }
@@ -527,6 +524,40 @@ function CanvasVideo ( src, options )
         return src;
     }
 
+
+    function getVideoInfos (src)
+    {
+        var o = {};
+        if (Array.isArray(src))
+        {
+            if ( typeof src[0] === 'string' )
+            {
+                o.src = src[0];
+            }
+            else
+            {
+                var mime = src[0].mime?src[0].mime:src[0].type;
+                o.src = src[0].src;
+                o.mime = mime;
+            }
+        }
+        else if (typeof src === 'string')
+        {
+            o.src = src;
+        }
+        else if (typeof src === 'object')
+        {
+            var mime = src.mime?src.mime:src.type;
+            o.src = src.src;
+            o.mime = mime;
+        }
+        else {
+            o = src;
+        }
+
+        o.mime = o.mime?o.mime:"video/"+Utils.getExtension(o.src);
+        return o;
+    }
 
 
     /********************************************************************************
