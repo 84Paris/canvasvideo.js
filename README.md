@@ -1,11 +1,6 @@
 # CanvasVideo.js
 canvasvideo.js is a lightweight library to play video file in a canvas element with audio support. This is the best way to play inline video with sound on iPhone.
 
-## [Howler version] ##
-
-This version of canvasvideo.js requires [howler.js](https://github.com/goldfire/howler.js) for audio control.
-
-
 ## Presentation ##
 
 We thought canvasvideo.js to help people to create immersive video experiences on mobile devices.
@@ -32,7 +27,7 @@ This library draw video element on a canvas and sync it with the audio (from the
 ### Installation ###
 
 ```js
-npm i git+ssh://git@github.com:84Paris/canvasvideo.js.git#howler-version --save
+npm install canvasvideo.js --save
 ```
 
 ### Import  ###
@@ -100,7 +95,6 @@ function playVideo()
 {
     video.play();
 }
-
 ```
 
 ### Use canvasvideo.js as a video fallback on iPhone  ###
