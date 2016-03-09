@@ -1,6 +1,6 @@
 {
   "name": "canvasvideo.js",
-  "version": "0.9.0.howler",
+  "version": "0.9.0-howler",
   "author": "Jean-Vincent Roger - jv.roger@84paris.com",
   "description": "canvasvideo.js is a lightweight library to play video file in a canvas element with audio support.",
   "main": "src/media/CanvasVideo.js",
