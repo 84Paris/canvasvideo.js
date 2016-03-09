@@ -195,7 +195,7 @@ Tested in the following browsers/OS:
 
 ### Howler version ###
 
-If your project uses [howler.js](https://github.com/goldfire/howler.js), prefer the [howler-version](https://github.com/84Paris/canvasvideo.js/tree/howler-version).
+If your project uses [howler.js](https://github.com/goldfire/howler.js), prefer the [howler-version](https://github.com/84Paris/canvasvideo.js/tree/howler-version) branch.
 
 
 ### License ###
