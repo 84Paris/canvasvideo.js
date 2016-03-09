@@ -57,7 +57,7 @@ function CanvasVideo ( src, options )
         for (var i in options) {
             that.options[i] = options[i];
         }
-        
+
         // if audio driving, increase FPS for smouth
         if( that.options.audio && !options.fps ) that.options.fps = 45;
 
@@ -67,7 +67,7 @@ function CanvasVideo ( src, options )
         if ( that.options.width ) that.element.width = that.options.width;
         if ( that.options.height ) that.element.height = that.options.height;
 
-        if ( that.options.preload == true ) that.load ();
+        if ( that.options.preload === true || that.options.autoplay === true ) that.load ();
     }
 
 
