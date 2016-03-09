@@ -91,7 +91,7 @@ function AudioPlayer ( src, options )
         },
         set: function(value) {
             that.options.volume = value;
-            sound.volume = value;
+            sound.volume(value);
         }
     });
 
