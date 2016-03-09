@@ -193,6 +193,11 @@ Tested in the following browsers/OS:
 * Mobile iOS 8.0+
 
 
+### Howler version ###
+
+If your project uses [howler.js](https://github.com/goldfire/howler.js), prefer the [howler-version](https://github.com/84Paris/canvasvideo.js/tree/howler-version).
+
+
 ### License ###
 
 This content is released under the (http://opensource.org/licenses/MIT) MIT License.
