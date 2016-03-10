@@ -59,7 +59,7 @@ function CanvasVideo ( src, options )
         }
 
         // if audio driving, increase FPS for smouth
-        if( that.options.audio && !options.fps ) that.options.fps = 45;
+        if( that.options.audio && !options.fps ) that.options.fps = 33;
 
         that.element = document.createElement ('canvas');
         that.ctx     = that.element.getContext('2d');
@@ -405,7 +405,9 @@ function CanvasVideo ( src, options )
 
         // gestion de l'audio.
         if (that.options.audio) {
-            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate } );
+            var buffer = null;
+            if(src.arraybuffer) buffer = src.arraybuffer;
+            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate, arraybuffer:buffer } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }
@@ -425,7 +427,7 @@ function CanvasVideo ( src, options )
 
         xhr.onload = function(oEvent) {
             var blob = URL.createObjectURL( new Blob([oEvent.target.response], {type: mime}) );
-            build ( {src:blob, mime:mime} );
+            build ( {src:blob, mime:mime, arraybuffer:xhr.response} );
         };
 
         xhr.onprogress = function(oEvent) {
