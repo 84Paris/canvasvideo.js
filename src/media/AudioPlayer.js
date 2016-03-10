@@ -8,8 +8,6 @@
 
 'use strict';
 
-require ('howler');
-
 var EventDispatcher     = require( '../event/EventDispatcher' );
 var Event               = require( '../event/Event' );
 var CanvasVideoEvent    = require( '../event/CanvasVideoEvent' );
@@ -20,11 +18,19 @@ function AudioPlayer ( src, options )
     EventDispatcher.call ( this );
     var that = this;
 
+    var ctx, masterGain, xhr;
 
-    var sound;
+    var sound = {
+        _startTimestamp:0,
+        _playbackTime:0,
+        isPlaying:false
+    };
+
     this.options = {
         loop: false
     };
+
+    var useWebAudio = true;
 
     function _constructor ( src, options )
     {
@@ -33,35 +39,35 @@ function AudioPlayer ( src, options )
             that.options[i] = options[i];
         }
 
-        sound = new Howl({
-            urls:[src],
-            format:'mp4',
-            onload:canPlay,
-            loop: that.options.loop,
-            volume: that.options.volume,
-            onend: function(e){
-                that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
-            }
-        }).load();
+        if ( useWebAudio ) webAudioConstructor( src );
+
     }
 
     this.play = function ()
     {
-        sound.play ();
+        if (useWebAudio)
+        {
+            if(sound.buffer)
+            {
+                playSound();
+            }
+        }
+
     }
 
     this.pause = function ()
     {
-        sound.pause ();
+        pauseSound();
     }
 
     this.destroy = function ()
     {
-        sound.unload ();
+
     }
 
     /********************************************************************************
     // GETTER / SETTER
+
     /********************************************************************************/
 
     Object.defineProperty( that, 'loop', {
@@ -70,17 +76,22 @@ function AudioPlayer ( src, options )
         },
         set: function(value) {
             that.options.loop = value;
-            sound.loop = value;
         }
     });
 
 
     Object.defineProperty( that, 'currentTime', {
         get: function() {
-            return sound?sound.pos():0;
+            if(sound.isPlaying) {
+                return sound.source?that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime:0;
+            }
+            else {
+                return sound._playbackTime;
+            }
+
         },
         set: function(value) {
-            sound.pos(value);
+            seek(value);
         }
     });
 
@@ -91,7 +102,19 @@ function AudioPlayer ( src, options )
         },
         set: function(value) {
             that.options.volume = value;
-            sound.volume(value);
+            masterGain.gain.value = value;
+        }
+    });
+
+
+    Object.defineProperty( that, 'playbackRate', {
+        get: function() {
+            return that.options.rate;
+        },
+        set: function(value) {
+            pauseSound();
+            that.options.rate = value;
+            playSound();
         }
     });
 
@@ -100,8 +123,98 @@ function AudioPlayer ( src, options )
     // PRIVATES
     /********************************************************************************/
 
+    function webAudioConstructor ()
+    {
+        //----------------------------------------------------
+        // Create audio context
+        if (typeof AudioContext !== 'undefined') {
+            ctx = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            ctx = new webkitAudioContext();
+        }
+        // Create the master gain node
+        masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
+        masterGain.gain.value = that.options.volume;
+        masterGain.connect(ctx.destination);
+        //------------------------------------------------------
 
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) activeiOSAudio();
 
+        // check if src is an arraybuffer
+        if ( that.options.arraybuffer != null )
+        {
+            decodeAudio(that.options.arraybuffer);
+        }
+        else
+        {
+            // need to load.
+            xhr = new XMLHttpRequest();
+            xhr.open('get', src, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function() {
+                decodeAudio(xhr.response);
+            }
+            xhr.send();
+        }
+    }
+
+    function decodeAudio (arraybuffer)
+    {
+        ctx.decodeAudioData(arraybuffer, function(buffer) {
+            sound.buffer = buffer;
+            canPlay();
+        });
+    }
+
+    function initSource ()
+    {
+        sound.source = ctx.createBufferSource();
+        sound.source.playbackRate.value = that.options.rate;
+        sound.source.buffer = sound.buffer;
+        sound.source.connect(masterGain);
+        sound.source.onended = onEnded;
+    }
+
+    function playSound ()
+    {
+        initSource();
+        sound.source.start(0, sound._playbackTime);
+        sound._startTimestamp = Date.now();
+        sound.isPlaying = true;
+    }
+
+    function stopSound (isPause)
+    {
+        sound.source.onended = null;
+        sound.source.stop(0);
+        sound._playbackTime = isPause ? that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime : 0;
+        sound.isPlaying = false;
+    }
+
+    function pauseSound ()
+    {
+        stopSound(true);
+    }
+
+    function seek (time)
+    {
+        if ( sound.isPlaying )
+        {
+            stopSound();
+            sound._playbackTime = time;
+            playSound();
+        }
+        else
+        {
+            sound._playbackTime = time;
+        }
+
+    }
+
+    function activeiOSAudio ()
+    {
+
+    }
 
     /********************************************************************************
     // HANDLERS
@@ -110,6 +223,16 @@ function AudioPlayer ( src, options )
     function canPlay (e)
     {
         that.dispatchEvent ( new Event( CanvasVideoEvent.CAN_PLAY, {} ) );
+    }
+
+    function onEnded (e)
+    {
+        that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED, {} ));
+        if(that.options.loop)
+        {
+            stopSound();
+            playSound();
+        }
     }
 
     _constructor( src, options );
