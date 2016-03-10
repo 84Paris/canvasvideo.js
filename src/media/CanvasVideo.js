@@ -86,7 +86,6 @@ function CanvasVideo ( src, options )
         }
     }
 
-    // gerer le cas de n'est pas encore loadé.
     this.play = function ()
     {
         if ( built && readyToPlay )
@@ -406,7 +405,7 @@ function CanvasVideo ( src, options )
         // gestion de l'audio.
         if (that.options.audio) {
             var buffer = null;
-            if(src.arraybuffer) buffer = src.arraybuffer;
+            if(src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
             sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate, arraybuffer:buffer } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
