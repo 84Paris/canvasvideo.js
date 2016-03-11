@@ -58,8 +58,15 @@ function CanvasVideo ( src, options )
             that.options[i] = options[i];
         }
 
-        // if audio driving, increase FPS for smouth
-        if( that.options.audio && !options.fps ) that.options.fps = 33;
+        if (that.options.audio)
+        {
+            sound = new AudioPlayer();
+            // if audio driving, increase FPS for smouth
+            if(!options.fps)
+            {
+                that.options.fps = 33;
+            }
+        }
 
         that.element = document.createElement ('canvas');
         that.ctx     = that.element.getContext('2d');
@@ -406,7 +413,7 @@ function CanvasVideo ( src, options )
         if (that.options.audio) {
             var buffer = null;
             if(src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
-            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate, arraybuffer:buffer } );
+            sound.set ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate, arraybuffer:buffer } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }
@@ -573,11 +580,11 @@ function CanvasVideo ( src, options )
             if ( !that.options.audio ) {
                 bothReady ();
             }
-            else if ( that.options.audio && that.needTouchDevice  )
+            /*else if ( that.options.audio && that.needTouchDevice  )
             {
                 audioReady = true;
                 bothReady ();
-            }
+            }*/
             else if ( audioReady )
             {
                 bothReady ();

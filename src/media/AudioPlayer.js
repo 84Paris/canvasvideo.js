@@ -30,27 +30,56 @@ function AudioPlayer ( src, options )
         loop: false
     };
 
+    var _needTouch = false,
+        _iOSEnabled = false,
+        _playRequest = false;
+
     var useWebAudio = true;
 
-    function _constructor ( src, options )
+    function _constructor ()
+    {
+        if ( useWebAudio ) webAudioConstructor();
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            _needTouch = true;
+            activeiOSAudio();
+        }
+    }
+
+    this.set = function (src, options)
     {
         // copy options
         for (var i in options) {
             that.options[i] = options[i];
         }
-
-        if ( useWebAudio ) webAudioConstructor( src );
-
+        preload(src);
     }
 
     this.play = function ()
     {
         if (useWebAudio)
         {
-            if(sound.buffer)
+            if(_needTouch)
             {
-                playSound();
+                if(!_iOSEnabled) {
+                    _playRequest = true;
+                }
+                else {
+                    if(sound.buffer)
+                    {
+                        playSound();
+                    }else{
+                        console.log("request play but buffer pas prêt");
+                    }
+                }
             }
+            else
+            {
+                if(sound.buffer)
+                {
+                    playSound();
+                }
+            }
+
         }
 
     }
@@ -123,6 +152,7 @@ function AudioPlayer ( src, options )
     // PRIVATES
     /********************************************************************************/
 
+
     function webAudioConstructor ()
     {
         //----------------------------------------------------
@@ -134,12 +164,14 @@ function AudioPlayer ( src, options )
         }
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
-        masterGain.gain.value = that.options.volume;
         masterGain.connect(ctx.destination);
         //------------------------------------------------------
+    }
 
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) activeiOSAudio();
 
+    function preload (src)
+    {
+        masterGain.gain.value = that.options.volume;
         // check if src is an arraybuffer
         if ( that.options.arraybuffer != null )
         {
@@ -157,6 +189,7 @@ function AudioPlayer ( src, options )
             xhr.send();
         }
     }
+
 
     function decodeAudio (arraybuffer)
     {
@@ -177,18 +210,25 @@ function AudioPlayer ( src, options )
 
     function playSound ()
     {
-        initSource();
-        sound.source.start(0, sound._playbackTime);
-        sound._startTimestamp = Date.now();
-        sound.isPlaying = true;
+        if (!sound.isPlaying)
+        {
+            initSource();
+            sound.source.start(0, sound._playbackTime);
+            sound._startTimestamp = Date.now();
+            sound.isPlaying = true;
+        }
+
     }
 
     function stopSound (isPause)
     {
-        sound.source.onended = null;
-        sound.source.stop(0);
-        sound._playbackTime = isPause ? that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime : 0;
-        sound.isPlaying = false;
+        if (sound.isPlaying)
+        {
+            sound.source.onended = null;
+            sound.source.stop(0);
+            sound._playbackTime = isPause ? that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime : 0;
+            sound.isPlaying = false;
+        }
     }
 
     function pauseSound ()
@@ -213,7 +253,26 @@ function AudioPlayer ( src, options )
 
     function activeiOSAudio ()
     {
+        var unlock = function ()
+        {
+            var buffer = ctx.createBuffer(1, 1, 22050);
+            var source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
 
+            if (typeof source.start === 'undefined') {
+              source.noteOn(0);
+            } else {
+              source.start(0);
+            }
+
+            setTimeout(function() {
+                window.removeEventListener('touchend', unlock, false);
+                _iOSEnabled = true;
+                if(_playRequest) that.play();
+            }, 0);
+        }
+        window.addEventListener('touchend', unlock, false);
     }
 
     /********************************************************************************
