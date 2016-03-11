@@ -143,7 +143,7 @@ var video = new CanvasVideo(src, options);
         * `String` url of an audio file.
     * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
 	* **canvas:** `HTMLCanvasElement` *(optional)* the canvas to use as CanvasVideo.
-    * **fps:** `Number` *(default: `24.0`)* Frame per seconds (only use if `audio:false`).
+    * **fps:** `Number` *(default: `24.0`)* Frame per seconds.
     * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.
 	* **playbackRate:** `Number` *(default: `1.0`)* Set the default speed of the audio/video playback.
     * **preload:** `Boolean` *(default: `false`)* Set to true to automatically load when canvasvideo is create.
@@ -203,3 +203,6 @@ If your project uses [howler.js](https://github.com/goldfire/howler.js), prefer 
 ### License ###
 
 This content is released under the (http://opensource.org/licenses/MIT) MIT License.
+
+
+[![Analytics](https://ga-beacon.appspot.com/UA-64424781-2/canvasvideo.js)](https://github.com/igrigorik/ga-beacon)
