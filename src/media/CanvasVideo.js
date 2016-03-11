@@ -134,6 +134,7 @@ function CanvasVideo ( src, options )
         }
         Utils.removeVideoElement (video);
         unbind ();
+        that.ctx.clearRect(0, 0, video.width, video.height);
         video = null;
     }
 

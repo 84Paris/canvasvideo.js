@@ -8,12 +8,13 @@
 
 'use strict';
 
-var EventDispatcher     = require( '../event/EventDispatcher' );
-var Event               = require( '../event/Event' );
-var CanvasVideoEvent    = require( '../event/CanvasVideoEvent' );
+var EventDispatcher     = require( '../event/EventDispatcher' ),
+    Event               = require( '../event/Event' ),
+    CanvasVideoEvent    = require( '../event/CanvasVideoEvent' ),
+    Utils               = require( '../core/Utils' );
 
 
-function AudioPlayer ( src, options )
+function AudioPlayer ()
 {
     EventDispatcher.call ( this );
     var that = this;
@@ -39,7 +40,8 @@ function AudioPlayer ( src, options )
     function _constructor ()
     {
         if ( useWebAudio ) webAudioConstructor();
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        if ( Utils.isIOSdevice )
+        {
             _needTouch = true;
             activeiOSAudio();
         }
@@ -48,7 +50,8 @@ function AudioPlayer ( src, options )
     this.set = function (src, options)
     {
         // copy options
-        for (var i in options) {
+        for (var i in options)
+        {
             that.options[i] = options[i];
         }
         preload(src);
@@ -60,10 +63,12 @@ function AudioPlayer ( src, options )
         {
             if(_needTouch)
             {
-                if(!_iOSEnabled) {
+                if(!_iOSEnabled)
+                {
                     _playRequest = true;
                 }
-                else {
+                else
+                {
                     if(sound.buffer) playSound();
                 }
             }
@@ -83,12 +88,16 @@ function AudioPlayer ( src, options )
 
     this.destroy = function ()
     {
+        stopSound();
+        sound.source.disconnect(0);
+        masterGain.disconnect(0);
+        masterGain = null;
+        sound = null;
 
     }
 
     /********************************************************************************
     // GETTER / SETTER
-
     /********************************************************************************/
 
     Object.defineProperty( that, 'loop', {
@@ -147,17 +156,18 @@ function AudioPlayer ( src, options )
 
     function webAudioConstructor ()
     {
-        //----------------------------------------------------
         // Create audio context
-        if (typeof AudioContext !== 'undefined') {
+        if (typeof AudioContext !== 'undefined')
+        {
             ctx = new AudioContext();
-        } else if (typeof webkitAudioContext !== 'undefined') {
+        }
+        else if (typeof webkitAudioContext !== 'undefined')
+        {
             ctx = new webkitAudioContext();
         }
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
         masterGain.connect(ctx.destination);
-        //------------------------------------------------------
     }
 
 
@@ -286,7 +296,7 @@ function AudioPlayer ( src, options )
         }
     }
 
-    _constructor( src, options );
+    _constructor();
 }
 
 AudioPlayer.prototype = Object.create ( EventDispatcher.prototype );
