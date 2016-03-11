@@ -2,7 +2,7 @@
  * Utils methods.
  *
  * @class
- * @author Jean-Vincent Roger
+ * @author Jean-Vincent Roger - 84.Paris
  */
 
 'use strict';
