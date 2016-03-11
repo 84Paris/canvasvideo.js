@@ -14,7 +14,7 @@ var EventDispatcher = require('../event/EventDispatcher'),
     Utils = require('../core/Utils');
 
 
-function AudioPlayer() {
+function AudioPlayer(audiocontext) {
     EventDispatcher.call(this);
     var that = this;
 
@@ -36,8 +36,8 @@ function AudioPlayer() {
 
     var useWebAudio = true;
 
-    function _constructor() {
-        if (useWebAudio) webAudioConstructor();
+    function _constructor(audiocontext) {
+        if (useWebAudio) webAudioConstructor(audiocontext);
         if (Utils.isIOSdevice) {
             _needTouch = true;
             activeiOSAudio();
@@ -138,9 +138,11 @@ function AudioPlayer() {
     /********************************************************************************/
 
 
-    function webAudioConstructor() {
+    function webAudioConstructor(audiocontext) {
         // Create audio context
-        if (typeof AudioContext !== 'undefined') {
+        if (audiocontext != null) {
+            ctx = audiocontext;
+        } else if (typeof AudioContext !== 'undefined') {
             ctx = new AudioContext();
         } else if (typeof webkitAudioContext !== 'undefined') {
             ctx = new webkitAudioContext();
@@ -256,7 +258,7 @@ function AudioPlayer() {
         }
     }
 
-    _constructor();
+    _constructor(audiocontext);
 }
 
 AudioPlayer.prototype = Object.create(EventDispatcher.prototype);

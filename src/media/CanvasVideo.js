@@ -39,7 +39,6 @@ function CanvasVideo(src, options) {
     this.options = {
         fps: 24,
         loop: true,
-        hideVideoElement: true,
         xhr: false,
         autoplay: false,
         volume: 1,
@@ -57,7 +56,7 @@ function CanvasVideo(src, options) {
         }
 
         if (that.options.audio) {
-            sound = new AudioPlayer();
+            sound = new AudioPlayer(that.options.audiocontext);
             // if audio driving, increase FPS for smouth
             if (!options.fps) {
                 that.options.fps = 33;
@@ -366,9 +365,7 @@ function CanvasVideo(src, options) {
         if (!that.options.id) that.id = video.id ? video.id : Utils.uid();
         else that.id = that.options.id;
         video.id = that.id;
-        //video.playbackRate = that.options.playbackRate;
-        //document.body.appendChild ( video );
-        //if(that.options.hideVideoElement) video.style.display = "none";
+
         setTimeout(function() {
             video.load();
         }, 50);

@@ -141,8 +141,9 @@ var video = new CanvasVideo(src, options);
     * **audio:** This parameter could be:
         * `Boolean` *(default: `false`)* Set to `true` to play audio channel of the video file.
         * `String` url of an audio file.
+	* **audiocontext:** `AudioContext` *(optional)* the AudioContext to use.
     * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
-	* **canvas:** `HTMLCanvasElement` *(optional)* the canvas to use as CanvasVideo.
+	* **canvas:** `<canvas>` *(optional)* the canvas to use as CanvasVideo.
     * **fps:** `Number` *(default: `24.0`)* Frame per seconds.
     * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.
 	* **playbackRate:** `Number` *(default: `1.0`)* Set the default speed of the audio/video playback.
