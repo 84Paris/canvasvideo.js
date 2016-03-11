@@ -1,0 +1,261 @@
+{
+
+	"parser": "espree",
+
+	"ecmaFeatures": {
+		"binaryLiterals"                   : false, // enable binary literals
+		"blockBindings"                    : false, // enable let and const (aka block bindings)
+		"defaultParams"                    : false, // enable default function parameters
+		"forOf"                            : false, // enable for-of loops
+		"generators"                       : false, // enable generators
+		"objectLiteralComputedProperties"  : false, // enable computed object literal property names
+		"objectLiteralDuplicateProperties" : false, // enable duplicate object literal properties in strict mode
+		"objectLiteralShorthandMethods"    : false, // enable object literal shorthand methods
+		"objectLiteralShorthandProperties" : false, // enable object literal shorthand properties
+		"octalLiterals"                    : false, // enable octal literals
+		"regexUFlag"                       : false, // enable the regular expression u flag
+		"regexYFlag"                       : false, // enable the regular expression y flag
+		"templateStrings"                  : false, // enable template strings
+		"unicodeCodePointEscapes"          : false, // enable code point escapes
+		"jsx"                              : false  // enable JSX
+	},
+
+	"env": {
+        "browser"     : true,  // browser global variables.
+        "node"        : true,  // Node.js global variables and Node.js-specific rules.
+        "amd"         : false, // defines require() and define() as global variables as per the amd spec.
+        "mocha"       : false, // adds all of the Mocha testing global variables.
+        "jasmine"     : false, // adds all of the Jasmine testing global variables for version 1.3 and 2.0.
+        "phantomjs"   : false, // phantomjs global variables.
+        "jquery"      : false, // jquery global variables.
+        "prototypejs" : false, // prototypejs global variables.
+        "shelljs"     : false // shelljs global variables.
+	},
+
+	"globals": {
+        "Modernizr"        : true,
+        "TimelineLite"     : true,
+        "TimelineMax"      : true,
+        "TweenLite"        : true,
+        "TweenMax"         : true,
+        "Back"             : true,
+        "Bounce"           : true,
+        "Circ"             : true,
+        "Cubic"            : true,
+        "Ease"             : true,
+        "EaseLookup"       : true,
+        "Elastic"          : true,
+        "Expo"             : true,
+        "Linear"           : true,
+        "Power0"           : true,
+        "Power1"           : true,
+        "Power2"           : true,
+        "Power3"           : true,
+        "Power3"           : true,
+        "Power4"           : true,
+        "Quad"             : true,
+        "Quart"            : true,
+        "Quint"            : true,
+        "RoughEase"        : true,
+        "Sine"             : true,
+        "SlowMo"           : true,
+        "SteppedEase"      : true,
+        "Strong"           : true,
+        "Draggable"        : true,
+        "SplitText"        : true,
+        "VelocityTracker"  : true,
+        "CSSPlugin"        : true,
+        "ThrowPropsPlugin" : true,
+        "BezierPlugin"     : true
+	},
+
+	"plugins": [
+		// e.g. "react" (must run `npm install eslint-plugin-react` first)
+	],
+
+	"rules": {
+        "no-alert"                    : 0, // disallow the use of alert, confirm, and prompt
+        "no-array-constructor"        : 0,
+        "no-bitwise"                  : 0,
+        "no-caller"                   : 0, // disallow use of arguments.caller or arguments.callee
+        "no-catch-shadow"             : 0,
+        "no-class-assign"             : 0,
+        "no-cond-assign"              : 2, // disallow assignment in conditional expressions
+        "no-console"                  : 0, // disallow use of console (off by default in the node environment)
+        "no-const-assign"             : 0,
+        "no-constant-condition"       : 2, // disallow use of constant expressions in conditions
+        "no-continue"                 : 0,
+        "no-control-regex"            : 2, // disallow control characters in regular expressions
+        "no-debugger"                 : 0, // disallow use of debugger
+        "no-delete-var"               : 2,
+        "no-div-regex"                : 0, // disallow division operators explicitly at beginning of regular expression (off by default)
+        "no-dupe-class-members"       : 0,
+        "no-dupe-keys"                : 2, // disallow duplicate keys when creating object literals
+        "no-dupe-args"                : 2, // disallow duplicate args in functions
+        "no-duplicate-case"           : 2, // disallow two same case in a switch
+        "no-else-return"              : 0, // disallow else after a return in an if (off by default)
+        "no-empty"                    : 1, // disallow empty statements
+        "no-empty-character-class"    : 2, // disallow the use of empty character classes in regular expressions
+        "no-empty-label"              : 0, // disallow use of labels for anything other then loops and switches
+        "no-eq-null"                  : 0, // disallow comparisons to null without a type-checking operator (off by default)
+        "no-eval"                     : 1, // disallow use of eval()
+        "no-ex-assign"                : 2, // disallow assigning to the exception in a catch block
+        "no-extend-native"            : 0, // disallow adding to native types
+        "no-extra-bind"               : 0, // disallow unnecessary function binding
+        "no-extra-boolean-cast"       : 1, // disallow double-negation boolean casts in a boolean context
+        "no-extra-parens"             : 0, // disallow unnecessary parentheses (off by default)
+        "no-extra-semi"               : 2, // disallow unnecessary semicolons
+        "no-fallthrough"              : 2, // disallow fallthrough of case statements
+        "no-floating-decimal"         : 0, // disallow the use of leading or trailing decimal points in numeric literals (off by default)
+        "no-func-assign"              : 2, // disallow overwriting functions written as function declarations
+        "no-implicit-coercion"        : 0,
+        "no-implied-eval"             : 0, // disallow use of eval()-like methods
+        "no-inline-comments"          : 0,
+        "no-inner-declarations"       : [2, "functions"], // disallow function or variable declarations in nested blocks
+        "no-invalid-regexp"           : 2, // disallow invalid regular expression strings in the RegExp constructor
+        "no-invalid-this"             : 0,
+        "no-irregular-whitespace"     : 2, // disallow irregular whitespace outside of strings and comments
+        "no-iterator"                 : 0, // disallow usage of __iterator__ property
+        "no-label-var"                : 0,
+        "no-labels"                   : 0, // disallow use of labeled statements
+        "no-lone-blocks"              : 0, // disallow unnecessary nested blocks
+        "no-lonely-if"                : 0,
+        "no-loop-func"                : 0, // disallow creation of functions within loops
+        "no-mixed-requires"           : [0, false],
+        "no-mixed-spaces-and-tabs"    : [2, false],
+        "linebreak-style"             : [0, "unix"],
+        "no-multi-spaces"             : 0, // disallow use of multiple spaces
+        "no-multi-str"                : 0, // disallow use of multiline strings
+        "no-multiple-empty-lines"     : [0, {"max": 2}],
+        "no-native-reassign"          : 0, // disallow reassignments of native objects
+        "no-negated-in-lhs"           : 2, // disallow negation of the left operand of an in expression
+        "no-nested-ternary"           : 0,
+        "no-new"                      : 0, // disallow use of new operator when not part of the assignment or comparison
+        "no-new-func"                 : 0, // disallow use of new operator for Function object
+        "no-new-object"               : 0,
+        "no-new-require"              : 0,
+        "no-new-wrappers"             : 0, // disallows creating new instances of String, Number, and Boolean
+        "no-obj-calls"                : 2, // disallow the use of object properties of the global object (Math and JSON) as functions
+        "no-octal"                    : 2, // disallow use of octal literals
+        "no-octal-escape"             : 0, // disallow use of octal escape sequences in string literals, such as var foo = "Copyright \251";
+        "no-param-reassign"           : 0,
+        "no-path-concat"              : 0,
+        "no-plusplus"                 : 0,
+        "no-process-env"              : 0, // disallow use of process.env (off by default)
+        "no-process-exit"             : 0,
+        "no-proto"                    : 0, // disallow usage of __proto__ property
+        "no-redeclare"                : 2, // disallow declaring the same variable more then once
+        "no-regex-spaces"             : 2, // disallow multiple spaces in a regular expression literal
+        "no-restricted-modules"       : 0,
+        "no-restricted-syntax"        : 0,
+        "no-return-assign"            : 0, // disallow use of assignment in return statement
+        "no-script-url"               : 0, // disallow use of javascript urls
+        "no-self-compare"             : 0, // disallow comparisons where both sides are exactly the same (off by default)
+        "no-sequences"                : 0, // disallow use of comma operator
+        "no-shadow"                   : 0,
+        "no-shadow-restricted-names"  : 0,
+        "no-spaced-func"              : 0,
+        "no-sparse-arrays"            : 2, // disallow sparse arrays
+        "no-sync"                     : 0,
+        "no-ternary"                  : 0,
+        "no-trailing-spaces"          : 0,
+        "no-this-before-super"        : 0,
+        "no-throw-literal"            : 0,
+        "no-undef"                    : 2,
+        "no-undef-init"               : 0,
+        "no-undefined"                : 0,
+        "no-unexpected-multiline"     : 0,
+        "no-underscore-dangle"        : 0,
+        "no-unneeded-ternary"         : 0,
+        "no-unreachable"              : 2, // disallow unreachable statements after a return, throw, continue, or break statement
+        "no-unused-expressions"       : 0, // disallow usage of expressions in statement position
+        "no-unused-vars"              : [1, {"vars": "all", "args": "after-used"}],
+        "no-use-before-define"        : 0,
+        "no-useless-call"             : 0,
+        "no-useless-concat"           : 0,
+        "no-void"                     : 0, // disallow use of void operator (off by default)
+        "no-var"                      : 0,
+        "no-warning-comments"         : [0, { "terms": ["todo", "fixme", "xxx"], "location": "start" }],
+        "no-with"                     : 0,
+
+        "array-bracket-spacing"       : [0, "never"],
+        "arrow-parens"                : 0,
+        "arrow-spacing"               : 0,
+        "accessor-pairs"              : 0,
+        "block-scoped-var"            : 0, // treat var statements as if they were block scoped (off by default)
+        "block-spacing"               : 0,
+        "brace-style"                 : [0, "1tbs"],
+        "callback-return"             : 0,
+        "camelcase"                   : 0,
+        "comma-dangle"                : [2, "never"], // disallow trailing commas in object literals
+        "comma-spacing"               : 0,
+        "comma-style"                 : 0,
+        "complexity"                  : [0, 11], // specify the maximum cyclomatic complexity allowed in a program (off by default)
+        "computed-property-spacing"   : [0, "never"],
+        "consistent-return"           : 0, // require return statements to either always or never specify values
+        "consistent-this"             : [0, "that"],
+        "constructor-super"           : 0,
+        "curly"                       : [0, "all"], // specify curly brace conventions for all control statements
+        "default-case"                : 0, // require default case in switch statements (off by default)
+        "dot-location"                : 0,
+        "dot-notation"                : [0, { "allowKeywords": true }], // encourages use of dot notation whenever possible
+        "eol-last"                    : 0,
+        "eqeqeq"                      : 1, // require the use of === and !==
+        "func-names"                  : 0,
+        "func-style"                  : [0, "declaration"],
+        "generator-star-spacing"      : 0,
+        "global-require"              : 0,
+        "guard-for-in"                : 0, // make sure for-in loops have an if statement (off by default)
+        "handle-callback-err"         : 0,
+        "id-length"                   : 0,
+        "indent"                      : 0,
+        "init-declarations"           : 0,
+        "key-spacing"                 : [0, { "beforeColon": false, "afterColon": true }],
+        "lines-around-comment"        : 0,
+        "max-depth"                   : [0, 4],
+        "max-len"                     : [0, 80, 4],
+        "max-nested-callbacks"        : [0, 2],
+        "max-params"                  : [0, 3],
+        "max-statements"              : [0, 10],
+        "new-cap"                     : 0,
+        "new-parens"                  : 0,
+        "newline-after-var"           : 0,
+        "object-curly-spacing"        : [0, "never"],
+        "object-shorthand"            : 0,
+        "one-var"                     : [0, "always"],
+        "operator-assignment"         : [0, "always"],
+        "operator-linebreak"          : 0,
+        "padded-blocks"               : 0,
+        "prefer-arrow-callback"       : 0,
+        "prefer-const"                : 0,
+        "prefer-spread"               : 0,
+        "prefer-reflect"              : 0,
+        "prefer-template"             : 0,
+        "quote-props"                 : 0,
+        "quotes"                      : [0, "double"],
+        "radix"                       : 0,
+        "id-match"                    : 0,
+        "require-jsdoc"               : 0,
+        "require-yield"               : 0,
+        "semi"                        : 0,
+        "semi-spacing"                : [0, {"before": false, "after": true}],
+        "sort-vars"                   : 0,
+        "space-after-keywords"        : [0, "always"],
+        "space-before-keywords"       : [0, "always"],
+        "space-before-blocks"         : [0, "always"],
+        "space-before-function-paren" : [0, "always"],
+        "space-in-parens"             : [0, "never"],
+        "space-infix-ops"             : 0,
+        "space-return-throw-case"     : 0,
+        "space-unary-ops"             : [0, { "words": true, "nonwords": false }],
+        "spaced-comment"              : 0,
+        "strict"                      : 0,
+        "use-isnan"                   : 2,
+        "valid-jsdoc"                 : 0, // Ensure JSDoc comments are valid (off by default)
+        "valid-typeof"                : 2, // Ensure that the results of typeof are compared against a valid string
+        "vars-on-top"                 : 0,
+        "wrap-iife"                   : 0,
+        "wrap-regex"                  : 0,
+        "yoda"                        : [0, "never"]
+    }
+}
