@@ -247,8 +247,6 @@ module.exports = EventDispatcher;
 
 'use strict';
 
-require ('howler');
-
 var EventDispatcher     = require( '../event/EventDispatcher' );
 var Event               = require( '../event/Event' );
 var CanvasVideoEvent    = require( '../event/CanvasVideoEvent' );
@@ -259,48 +257,85 @@ function AudioPlayer ( src, options )
     EventDispatcher.call ( this );
     var that = this;
 
+    var ctx, masterGain, xhr;
 
-    var sound;
+    var sound = {
+        _startTimestamp:0,
+        _playbackTime:0,
+        isPlaying:false
+    };
+
     this.options = {
         loop: false
     };
 
-    function _constructor ( src, options )
+    var _needTouch = false,
+        _iOSEnabled = false,
+        _playRequest = false;
+
+    var useWebAudio = true;
+
+    function _constructor ()
+    {
+        if ( useWebAudio ) webAudioConstructor();
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            _needTouch = true;
+            activeiOSAudio();
+        }
+    }
+
+    this.set = function (src, options)
     {
         // copy options
         for (var i in options) {
             that.options[i] = options[i];
         }
-
-        sound = new Howl({
-            urls:[src],
-            format:'mp4',
-            onload:canPlay,
-            loop: that.options.loop,
-            volume: that.options.volume,
-            onend: function(e){
-                that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED ));
-            }
-        }).load();
+        preload(src);
     }
 
     this.play = function ()
     {
-        sound.play ();
+        if (useWebAudio)
+        {
+            if(_needTouch)
+            {
+                if(!_iOSEnabled) {
+                    _playRequest = true;
+                }
+                else {
+                    if(sound.buffer)
+                    {
+                        playSound();
+                    }else{
+                        console.log("request play but buffer pas prêt");
+                    }
+                }
+            }
+            else
+            {
+                if(sound.buffer)
+                {
+                    playSound();
+                }
+            }
+
+        }
+
     }
 
     this.pause = function ()
     {
-        sound.pause ();
+        pauseSound();
     }
 
     this.destroy = function ()
     {
-        sound.unload ();
+
     }
 
     /********************************************************************************
     // GETTER / SETTER
+
     /********************************************************************************/
 
     Object.defineProperty( that, 'loop', {
@@ -309,17 +344,22 @@ function AudioPlayer ( src, options )
         },
         set: function(value) {
             that.options.loop = value;
-            sound.loop = value;
         }
     });
 
 
     Object.defineProperty( that, 'currentTime', {
         get: function() {
-            return sound?sound.pos():0;
+            if(sound.isPlaying) {
+                return sound.source?that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime:0;
+            }
+            else {
+                return sound._playbackTime;
+            }
+
         },
         set: function(value) {
-            sound.pos(value);
+            seek(value);
         }
     });
 
@@ -330,7 +370,19 @@ function AudioPlayer ( src, options )
         },
         set: function(value) {
             that.options.volume = value;
-            sound.volume(value);
+            masterGain.gain.value = value;
+        }
+    });
+
+
+    Object.defineProperty( that, 'playbackRate', {
+        get: function() {
+            return that.options.rate;
+        },
+        set: function(value) {
+            pauseSound();
+            that.options.rate = value;
+            playSound();
         }
     });
 
@@ -340,7 +392,127 @@ function AudioPlayer ( src, options )
     /********************************************************************************/
 
 
+    function webAudioConstructor ()
+    {
+        //----------------------------------------------------
+        // Create audio context
+        if (typeof AudioContext !== 'undefined') {
+            ctx = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            ctx = new webkitAudioContext();
+        }
+        // Create the master gain node
+        masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
+        masterGain.connect(ctx.destination);
+        //------------------------------------------------------
+    }
 
+
+    function preload (src)
+    {
+        masterGain.gain.value = that.options.volume;
+        // check if src is an arraybuffer
+        if ( that.options.arraybuffer != null )
+        {
+            decodeAudio(that.options.arraybuffer);
+        }
+        else
+        {
+            // need to load.
+            xhr = new XMLHttpRequest();
+            xhr.open('get', src, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function() {
+                decodeAudio(xhr.response);
+            }
+            xhr.send();
+        }
+    }
+
+
+    function decodeAudio (arraybuffer)
+    {
+        ctx.decodeAudioData(arraybuffer, function(buffer) {
+            sound.buffer = buffer;
+            canPlay();
+        });
+    }
+
+    function initSource ()
+    {
+        sound.source = ctx.createBufferSource();
+        sound.source.playbackRate.value = that.options.rate;
+        sound.source.buffer = sound.buffer;
+        sound.source.connect(masterGain);
+        sound.source.onended = onEnded;
+    }
+
+    function playSound ()
+    {
+        if (!sound.isPlaying)
+        {
+            initSource();
+            sound.source.start(0, sound._playbackTime);
+            sound._startTimestamp = Date.now();
+            sound.isPlaying = true;
+        }
+
+    }
+
+    function stopSound (isPause)
+    {
+        if (sound.isPlaying)
+        {
+            sound.source.onended = null;
+            sound.source.stop(0);
+            sound._playbackTime = isPause ? that.options.rate*(Date.now() - sound._startTimestamp)/1000 + sound._playbackTime : 0;
+            sound.isPlaying = false;
+        }
+    }
+
+    function pauseSound ()
+    {
+        stopSound(true);
+    }
+
+    function seek (time)
+    {
+        if ( sound.isPlaying )
+        {
+            stopSound();
+            sound._playbackTime = time;
+            playSound();
+        }
+        else
+        {
+            sound._playbackTime = time;
+        }
+
+    }
+
+    function activeiOSAudio ()
+    {
+        var unlock = function ()
+        {
+            var buffer = ctx.createBuffer(1, 1, 22050);
+            var source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+
+            if (typeof source.start === 'undefined') {
+              source.noteOn(0);
+            } else {
+              source.start(0);
+            }
+
+            setTimeout(function() {
+                window.removeEventListener('touchend', unlock, false);
+                _iOSEnabled = true;
+                if(_playRequest) that.play();
+            }, 0);
+        }
+        window.addEventListener('touchend', unlock, false);
+    }
 
     /********************************************************************************
     // HANDLERS
@@ -351,6 +523,16 @@ function AudioPlayer ( src, options )
         that.dispatchEvent ( new Event( CanvasVideoEvent.CAN_PLAY, {} ) );
     }
 
+    function onEnded (e)
+    {
+        that.dispatchEvent ( new Event( CanvasVideoEvent.ENDED, {} ));
+        if(that.options.loop)
+        {
+            stopSound();
+            playSound();
+        }
+    }
+
     _constructor( src, options );
 }
 
@@ -358,7 +540,7 @@ AudioPlayer.prototype = Object.create ( EventDispatcher.prototype );
 AudioPlayer.prototype.constructor = AudioPlayer;
 module.exports = AudioPlayer;
 
-},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"howler":7}],6:[function(require,module,exports){
+},{"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4}],6:[function(require,module,exports){
 /**
  * CanvasVideo
  *
@@ -419,8 +601,15 @@ function CanvasVideo ( src, options )
             that.options[i] = options[i];
         }
 
-        // if audio driving, increase FPS for smouth
-        if( that.options.audio && !options.fps ) that.options.fps = 45;
+        if (that.options.audio)
+        {
+            sound = new AudioPlayer();
+            // if audio driving, increase FPS for smouth
+            if(!options.fps)
+            {
+                that.options.fps = 33;
+            }
+        }
 
         that.element = document.createElement ('canvas');
         that.ctx     = that.element.getContext('2d');
@@ -447,7 +636,6 @@ function CanvasVideo ( src, options )
         }
     }
 
-    // gerer le cas de n'est pas encore loadé.
     this.play = function ()
     {
         if ( built && readyToPlay )
@@ -766,7 +954,9 @@ function CanvasVideo ( src, options )
 
         // gestion de l'audio.
         if (that.options.audio) {
-            sound = new AudioPlayer ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate } );
+            var buffer = null;
+            if(src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
+            sound.set ( getAudioSrc (), { loop:that.options.loop, volume:that.options.volume, rate:that.options.playbackRate, arraybuffer:buffer } );
             sound.addEventListener ( CanvasVideoEvent.CAN_PLAY, audioCanPlay );
             sound.addEventListener ( CanvasVideoEvent.ENDED, audioEnded );
         }
@@ -786,7 +976,7 @@ function CanvasVideo ( src, options )
 
         xhr.onload = function(oEvent) {
             var blob = URL.createObjectURL( new Blob([oEvent.target.response], {type: mime}) );
-            build ( {src:blob, mime:mime} );
+            build ( {src:blob, mime:mime, arraybuffer:xhr.response} );
         };
 
         xhr.onprogress = function(oEvent) {
@@ -933,11 +1123,11 @@ function CanvasVideo ( src, options )
             if ( !that.options.audio ) {
                 bothReady ();
             }
-            else if ( that.options.audio && that.needTouchDevice  )
+            /*else if ( that.options.audio && that.needTouchDevice  )
             {
                 audioReady = true;
                 bothReady ();
-            }
+            }*/
             else if ( audioReady )
             {
                 bothReady ();
@@ -983,7 +1173,5 @@ CanvasVideo.prototype = Object.create ( EventDispatcher.prototype );
 CanvasVideo.prototype.constructor = CanvasVideo;
 module.exports = CanvasVideo;
 
-},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}],7:[function(require,module,exports){
-
-},{}]},{},[6])(6)
+},{"../core/Utils":1,"../event/CanvasVideoEvent":2,"../event/Event":3,"../event/EventDispatcher":4,"./AudioPlayer":5}]},{},[6])(6)
 });
