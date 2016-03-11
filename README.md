@@ -144,6 +144,7 @@ var video = new CanvasVideo(src, options);
     * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
     * **fps:** `Number` *(default: `24.0`)* Frame per seconds (only use if `audio:false`).
     * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.
+	* **playbackRate:** `Number` *(default: `1.0`)* Set the default speed of the audio/video playback.
     * **preload:** `Boolean` *(default: `false`)* Set to true to automatically load when canvasvideo is create.
     * **volume:** `Number` *(default: `1.0`)* Set the default volume of the audio.
     * **xhr:** `Boolean` *(default: `false`)* fully preload video/audio file(s).
@@ -167,7 +168,7 @@ var video = new CanvasVideo(src, options);
 * **height:** `Number` Get/set the canvasvideo height.
 * **loop:** `Boolean` Get/set the loop parameter.
 * **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
-* **playbackRate:** `Number` Sets or returns the speed of the audio/video playback (not working yet with audio).
+* **playbackRate:** `Number` Sets or returns the speed of the audio/video playback.
 * **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
 * **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
 * **videoHeight:** `Number` Get the original video height.
