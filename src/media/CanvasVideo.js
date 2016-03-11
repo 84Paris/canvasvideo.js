@@ -68,8 +68,9 @@ function CanvasVideo ( src, options )
             }
         }
 
-        that.element = document.createElement ('canvas');
-        that.ctx     = that.element.getContext('2d');
+        if (options.canvas) that.element = options.canvas;
+        else that.element = document.createElement ('canvas');
+        that.ctx = that.element.getContext('2d');
 
         if ( that.options.width ) that.element.width = that.options.width;
         if ( that.options.height ) that.element.height = that.options.height;
