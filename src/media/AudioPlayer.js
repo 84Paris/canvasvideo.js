@@ -64,20 +64,12 @@ function AudioPlayer ( src, options )
                     _playRequest = true;
                 }
                 else {
-                    if(sound.buffer)
-                    {
-                        playSound();
-                    }else{
-                        console.log("request play but buffer pas prêt");
-                    }
+                    if(sound.buffer) playSound();
                 }
             }
             else
             {
-                if(sound.buffer)
-                {
-                    playSound();
-                }
+                if(sound.buffer) playSound();
             }
 
         }
