@@ -321,13 +321,13 @@ function AudioPlayer(audiocontext, audioBuffer) {
         if(sound.source.buffered.length>0) {
             var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
             var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
+            if(perc>1) perc = 1;
+            else if(perc<0) perc = 0;
             if(perc>=1 && that._waitFullyBuffer) {
-                perc = 1;
                 that._waitFullyBuffer = false;
                 that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
                 //console.log('sound playing');
             } else {
-                if(perc<0) perc = 0;
                 if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
                 //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
             }
