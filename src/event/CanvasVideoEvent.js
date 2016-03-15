@@ -14,6 +14,7 @@ var CanvasVideoEvent = {
     CAN_PLAY_THROUGH: "canplaythrough",
     PLAYING: "playing",
     PROGRESS: "progress",
+    READY: "ready",
     TIME_UPDATE: "timeupdate",
     WAITING: "waiting"
 }

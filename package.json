@@ -1,12 +1,12 @@
 {
   "name": "canvasvideo.js",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "author": "Jean-Vincent Roger - jv.roger@84paris.com",
-  "description": "canvasvideo.js is a lightweight library to play video file in a canvas element with audio support.",
+  "description": "canvasvideo.js is a lightweight library to play inline video with sound on iPhone (Safari).",
   "main": "src/media/CanvasVideo.js",
   "bin": "bin/canvasvideo.min.js",
   "scripts": {
-    "bundle": "browserify src/media/CanvasVideo.js --ignore howler --standalone CanvasVideo -o bin/canvasvideo.js",
+    "bundle": "browserify src/media/CanvasVideo.js --standalone CanvasVideo -o bin/canvasvideo.js",
     "uglify": "uglifyjs bin/canvasvideo.js -m -o bin/canvasvideo.min.js",
     "build": "npm run bundle; npm run uglify"
   },
@@ -14,6 +14,11 @@
     "type": "git",
     "url": "https://github.com/84Paris/canvasvideo.js.git"
   },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/84Paris/canvasvideo.js/issues"
+  },
+  "homepage": "https://github.com/84Paris/canvasvideo.js",
   "keywords": [
     "canvasvideo",
     "inline video",
@@ -22,6 +27,8 @@
     "inline",
     "iphone",
     "ios",
+    "video ios",
+    "video safari",
     "browserify"
   ],
   "devDependencies": {

@@ -14,7 +14,7 @@ var EventDispatcher = require('../event/EventDispatcher'),
     Utils = require('../core/Utils');
 
 
-function AudioPlayer(audiocontext) {
+function AudioPlayer(audiocontext, audioBuffer) {
     EventDispatcher.call(this);
     var that = this;
 
@@ -34,13 +34,16 @@ function AudioPlayer(audiocontext) {
         _iOSEnabled = false,
         _playRequest = false;
 
-    var useWebAudio = true;
+    that._useWebAudio = !audioBuffer;
+    that._waitFullyBuffer = false;
+    that.bufferLengthPerc = 0;
 
     function _constructor(audiocontext) {
-        if (useWebAudio) webAudioConstructor(audiocontext);
+        if (that._useWebAudio) webAudioConstructor(audiocontext);
+        else html5AudioConstructor();
         if (Utils.isIOSdevice) {
             _needTouch = true;
-            activeiOSAudio();
+            if (that._useWebAudio) activeiOSAudio();
         }
     }
 
@@ -53,7 +56,7 @@ function AudioPlayer(audiocontext) {
     }
 
     this.play = function() {
-        if (useWebAudio) {
+        if (that._useWebAudio) {
             if (_needTouch) {
                 if (!_iOSEnabled) {
                     _playRequest = true;
@@ -64,6 +67,8 @@ function AudioPlayer(audiocontext) {
                 if (sound.buffer) playSound();
             }
 
+        } else {
+            if (sound.source) playSound();
         }
 
     }
@@ -78,7 +83,6 @@ function AudioPlayer(audiocontext) {
         masterGain.disconnect(0);
         masterGain = null;
         sound = null;
-
     }
 
     /********************************************************************************
@@ -97,26 +101,32 @@ function AudioPlayer(audiocontext) {
 
     Object.defineProperty(that, 'currentTime', {
         get: function() {
-            if (sound.isPlaying) {
-                return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+            if (that._useWebAudio) {
+                if (sound.isPlaying) {
+                    return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                } else {
+                    return sound._playbackTime;
+                }
             } else {
-                return sound._playbackTime;
+                return sound.source.currentTime;
             }
-
         },
         set: function(value) {
-            seek(value);
+            if (that._useWebAudio) seek(value);
+            else sound.source.currentTime = value;
         }
     });
 
 
     Object.defineProperty(that, 'volume', {
         get: function() {
-            return sound ? sound.volume : 1;
+            if (that._useWebAudio) return sound.source ? masterGain.gain.value : 1;
+            else return sound.source ? sound.source.volume : 1;
         },
         set: function(value) {
             that.options.volume = value;
-            masterGain.gain.value = value;
+            if (that._useWebAudio) masterGain.gain.value = value;
+            else sound.source.volume = value;
         }
     });
 
@@ -126,9 +136,29 @@ function AudioPlayer(audiocontext) {
             return that.options.rate;
         },
         set: function(value) {
-            pauseSound();
             that.options.rate = value;
-            playSound();
+            if(that._useWebAudio) {
+                pauseSound();
+                playSound();
+            } else {
+                sound.source.playbackRate = value;
+            }
+
+        }
+    });
+
+
+    Object.defineProperty(that, 'bufferLength', {
+        get: function() {
+            if(!_useWebAudio)
+            {
+                if(sound.source.buffered.length>0) {
+                    var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+                    return sound.source.buffered.end(currentTimeRange)-sound.source.currentTime;
+                } else {
+                    return 0;
+                }
+            }
         }
     });
 
@@ -146,27 +176,48 @@ function AudioPlayer(audiocontext) {
             ctx = new AudioContext();
         } else if (typeof webkitAudioContext !== 'undefined') {
             ctx = new webkitAudioContext();
+        } else {
+            html5AudioConstructor ();
+            return;
         }
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
         masterGain.connect(ctx.destination);
+        //console.log('WebAudio API');
+    }
+
+    function html5AudioConstructor () {
+        that._useWebAudio = false;
+        sound.source = new Audio();
+        //console.log('HTML5 Audio');
     }
 
 
     function preload(src) {
-        masterGain.gain.value = that.options.volume;
-        // check if src is an arraybuffer
-        if (that.options.arraybuffer != null) {
-            decodeAudio(that.options.arraybuffer);
-        } else {
-            // need to load.
-            xhr = new XMLHttpRequest();
-            xhr.open('get', src, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function() {
-                decodeAudio(xhr.response);
+        if (that._useWebAudio) {
+            masterGain.gain.value = that.options.volume;
+            // check if src is an arraybuffer
+            if (that.options.arraybuffer != null) {
+                decodeAudio(that.options.arraybuffer);
+            } else {
+                // need to load.
+                xhr = new XMLHttpRequest();
+                xhr.open('get', src, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function() {
+                    decodeAudio(xhr.response);
+                }
+                xhr.send();
             }
-            xhr.send();
+        } else {
+            sound.source.src = src;
+            sound.source.volume = that.options.volume;
+            sound.source.addEventListener('canplaythrough', canPlay)
+            sound.source.addEventListener('ended', onEnded);
+            //sound.source.addEventListener('waiting', onWaiting);
+            sound.source.addEventListener('timeupdate', onTimeUpdate);
+            sound.source.addEventListener('progress', onProgress);
+            sound.source.load ();
         }
     }
 
@@ -187,21 +238,29 @@ function AudioPlayer(audiocontext) {
     }
 
     function playSound() {
-        if (!sound.isPlaying) {
-            initSource();
-            sound.source.start(0, sound._playbackTime);
-            sound._startTimestamp = Date.now();
-            sound.isPlaying = true;
+        if (that._useWebAudio) {
+            if (!sound.isPlaying) {
+                initSource();
+                sound.source.start(0, sound._playbackTime);
+                sound._startTimestamp = Date.now();
+                sound.isPlaying = true;
+            }
+        } else {
+            sound.source.play();
         }
-
     }
 
     function stopSound(isPause) {
-        if (sound.isPlaying) {
-            sound.source.onended = null;
-            sound.source.stop(0);
-            sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
-            sound.isPlaying = false;
+        if (that._useWebAudio) {
+            if (sound.isPlaying) {
+                sound.source.onended = null;
+                sound.source.stop(0);
+                sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                sound.isPlaying = false;
+            }
+        } else {
+            sound.source.pause();
+            if(!isPause) sound.source.currentTime = 0;
         }
     }
 
@@ -257,6 +316,42 @@ function AudioPlayer(audiocontext) {
             playSound();
         }
     }
+
+    function onProgress(e) {
+        if(sound.source.buffered.length>0) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
+            if(perc>1) perc = 1;
+            else if(perc<0) perc = 0;
+            if(perc>=1 && that._waitFullyBuffer) {
+                that._waitFullyBuffer = false;
+                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
+                //console.log('sound playing');
+            } else {
+                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
+                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
+            }
+            that.bufferLengthPerc = perc;
+        }
+    }
+
+/*
+    function onWaiting(e) {
+        console.log('Audio Buffer Waiting');
+        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+    }
+*/
+
+    function onTimeUpdate(e) {
+        if (!that._useWebAudio) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
+                that._waitFullyBuffer = true;
+                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+            }
+        }
+    }
+
 
     _constructor(audiocontext);
 }
