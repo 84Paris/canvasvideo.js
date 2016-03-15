@@ -47,7 +47,7 @@ function CanvasVideo(src, options) {
         volume: 1,
         playbackRate: 1,
         audioBuffer: false,
-        bufferTime: 3
+        bufferTime: 5
     };
 
     this.src = src;
