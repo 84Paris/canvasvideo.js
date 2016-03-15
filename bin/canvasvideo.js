@@ -82,7 +82,30 @@ var Utils = {
 
     },
 
-    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false
+    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false,
+
+    getCurrentTimeRange: function(media)
+    {
+        var i = media.buffered.length-1;
+        var result = i;
+        while(i>=0)
+        {
+            if (media.currentTime>media.buffered.start(i) && media.currentTime<media.buffered.end(i))
+            {
+                i = -1;
+            } else {
+                result = i;
+            }
+            i--;
+        }
+        return result;
+    },
+
+    capBufferTime : function (media, bufferTime)
+    {
+        if(media.currentTime+bufferTime>media.duration) return media.duration-media.currentTime;
+        else return bufferTime;
+    }
 
 
 }
@@ -106,6 +129,7 @@ var CanvasVideoEvent = {
     CAN_PLAY_THROUGH: "canplaythrough",
     PLAYING: "playing",
     PROGRESS: "progress",
+    READY: "ready",
     TIME_UPDATE: "timeupdate",
     WAITING: "waiting"
 }
@@ -250,7 +274,7 @@ var EventDispatcher = require('../event/EventDispatcher'),
     Utils = require('../core/Utils');
 
 
-function AudioPlayer(audiocontext) {
+function AudioPlayer(audiocontext, audioBuffer) {
     EventDispatcher.call(this);
     var that = this;
 
@@ -270,13 +294,16 @@ function AudioPlayer(audiocontext) {
         _iOSEnabled = false,
         _playRequest = false;
 
-    var useWebAudio = true;
+    that._useWebAudio = !audioBuffer;
+    that._waitFullyBuffer = false;
+    that.bufferLengthPerc = 0;
 
     function _constructor(audiocontext) {
-        if (useWebAudio) webAudioConstructor(audiocontext);
+        if (that._useWebAudio) webAudioConstructor(audiocontext);
+        else html5AudioConstructor();
         if (Utils.isIOSdevice) {
             _needTouch = true;
-            activeiOSAudio();
+            if (that._useWebAudio) activeiOSAudio();
         }
     }
 
@@ -289,7 +316,7 @@ function AudioPlayer(audiocontext) {
     }
 
     this.play = function() {
-        if (useWebAudio) {
+        if (that._useWebAudio) {
             if (_needTouch) {
                 if (!_iOSEnabled) {
                     _playRequest = true;
@@ -300,6 +327,8 @@ function AudioPlayer(audiocontext) {
                 if (sound.buffer) playSound();
             }
 
+        } else {
+            if (sound.source) playSound();
         }
 
     }
@@ -314,7 +343,6 @@ function AudioPlayer(audiocontext) {
         masterGain.disconnect(0);
         masterGain = null;
         sound = null;
-
     }
 
     /********************************************************************************
@@ -333,26 +361,32 @@ function AudioPlayer(audiocontext) {
 
     Object.defineProperty(that, 'currentTime', {
         get: function() {
-            if (sound.isPlaying) {
-                return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+            if (that._useWebAudio) {
+                if (sound.isPlaying) {
+                    return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                } else {
+                    return sound._playbackTime;
+                }
             } else {
-                return sound._playbackTime;
+                return sound.source.currentTime;
             }
-
         },
         set: function(value) {
-            seek(value);
+            if (that._useWebAudio) seek(value);
+            else sound.source.currentTime = value;
         }
     });
 
 
     Object.defineProperty(that, 'volume', {
         get: function() {
-            return sound ? sound.volume : 1;
+            if (that._useWebAudio) return sound.source ? masterGain.gain.value : 1;
+            else return sound.source ? sound.source.volume : 1;
         },
         set: function(value) {
             that.options.volume = value;
-            masterGain.gain.value = value;
+            if (that._useWebAudio) masterGain.gain.value = value;
+            else sound.source.volume = value;
         }
     });
 
@@ -362,9 +396,29 @@ function AudioPlayer(audiocontext) {
             return that.options.rate;
         },
         set: function(value) {
-            pauseSound();
             that.options.rate = value;
-            playSound();
+            if(that._useWebAudio) {
+                pauseSound();
+                playSound();
+            } else {
+                sound.source.playbackRate = value;
+            }
+
+        }
+    });
+
+
+    Object.defineProperty(that, 'bufferLength', {
+        get: function() {
+            if(!_useWebAudio)
+            {
+                if(sound.source.buffered.length>0) {
+                    var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+                    return sound.source.buffered.end(currentTimeRange)-sound.source.currentTime;
+                } else {
+                    return 0;
+                }
+            }
         }
     });
 
@@ -382,27 +436,48 @@ function AudioPlayer(audiocontext) {
             ctx = new AudioContext();
         } else if (typeof webkitAudioContext !== 'undefined') {
             ctx = new webkitAudioContext();
+        } else {
+            html5AudioConstructor ();
+            return;
         }
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
         masterGain.connect(ctx.destination);
+        //console.log('WebAudio API');
+    }
+
+    function html5AudioConstructor () {
+        that._useWebAudio = false;
+        sound.source = new Audio();
+        //console.log('HTML5 Audio');
     }
 
 
     function preload(src) {
-        masterGain.gain.value = that.options.volume;
-        // check if src is an arraybuffer
-        if (that.options.arraybuffer != null) {
-            decodeAudio(that.options.arraybuffer);
-        } else {
-            // need to load.
-            xhr = new XMLHttpRequest();
-            xhr.open('get', src, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function() {
-                decodeAudio(xhr.response);
+        if (that._useWebAudio) {
+            masterGain.gain.value = that.options.volume;
+            // check if src is an arraybuffer
+            if (that.options.arraybuffer != null) {
+                decodeAudio(that.options.arraybuffer);
+            } else {
+                // need to load.
+                xhr = new XMLHttpRequest();
+                xhr.open('get', src, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function() {
+                    decodeAudio(xhr.response);
+                }
+                xhr.send();
             }
-            xhr.send();
+        } else {
+            sound.source.src = src;
+            sound.source.volume = that.options.volume;
+            sound.source.addEventListener('canplaythrough', canPlay)
+            sound.source.addEventListener('ended', onEnded);
+            //sound.source.addEventListener('waiting', onWaiting);
+            sound.source.addEventListener('timeupdate', onTimeUpdate);
+            sound.source.addEventListener('progress', onProgress);
+            sound.source.load ();
         }
     }
 
@@ -423,21 +498,29 @@ function AudioPlayer(audiocontext) {
     }
 
     function playSound() {
-        if (!sound.isPlaying) {
-            initSource();
-            sound.source.start(0, sound._playbackTime);
-            sound._startTimestamp = Date.now();
-            sound.isPlaying = true;
+        if (that._useWebAudio) {
+            if (!sound.isPlaying) {
+                initSource();
+                sound.source.start(0, sound._playbackTime);
+                sound._startTimestamp = Date.now();
+                sound.isPlaying = true;
+            }
+        } else {
+            sound.source.play();
         }
-
     }
 
     function stopSound(isPause) {
-        if (sound.isPlaying) {
-            sound.source.onended = null;
-            sound.source.stop(0);
-            sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
-            sound.isPlaying = false;
+        if (that._useWebAudio) {
+            if (sound.isPlaying) {
+                sound.source.onended = null;
+                sound.source.stop(0);
+                sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                sound.isPlaying = false;
+            }
+        } else {
+            sound.source.pause();
+            if(!isPause) sound.source.currentTime = 0;
         }
     }
 
@@ -494,6 +577,42 @@ function AudioPlayer(audiocontext) {
         }
     }
 
+    function onProgress(e) {
+        if(sound.source.buffered.length>0) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
+            if(perc>1) perc = 1;
+            else if(perc<0) perc = 0;
+            if(perc>=1 && that._waitFullyBuffer) {
+                that._waitFullyBuffer = false;
+                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
+                //console.log('sound playing');
+            } else {
+                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
+                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
+            }
+            that.bufferLengthPerc = perc;
+        }
+    }
+
+/*
+    function onWaiting(e) {
+        console.log('Audio Buffer Waiting');
+        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+    }
+*/
+
+    function onTimeUpdate(e) {
+        if (!that._useWebAudio) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
+                that._waitFullyBuffer = true;
+                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+            }
+        }
+    }
+
+
     _constructor(audiocontext);
 }
 
@@ -528,10 +647,13 @@ function CanvasVideo(src, options) {
     var that = this;
 
     var canvas, video, sound;
-    var videoReady = false,
-        audioReady = false,
-        readyToPlay = false,
-        isPlaying = false;
+    var _videoReady = false,
+        _audioReady = false,
+        _readyToPlay = false,
+        _isPlaying = false,
+        _isWaitingFrame = false,
+        _alreadyDispatchWaiting = false,
+        _videoWaitFullyBuffer = false;
 
     var lastTime, time, elapsed;
     var currentTime = 0,
@@ -546,7 +668,9 @@ function CanvasVideo(src, options) {
         xhr: false,
         autoplay: false,
         volume: 1,
-        playbackRate: 1
+        playbackRate: 1,
+        audioBuffer: false,
+        bufferTime: 5
     };
 
     this.src = src;
@@ -560,7 +684,7 @@ function CanvasVideo(src, options) {
         }
 
         if (that.options.audio) {
-            sound = new AudioPlayer(that.options.audiocontext);
+            sound = new AudioPlayer(that.options.audioContext, that.options.audioBuffer);
             // if audio driving, increase FPS for smouth
             if (!options.fps) {
                 that.options.fps = 33;
@@ -588,9 +712,9 @@ function CanvasVideo(src, options) {
         }
     }
 
-    this.play = function() {
-        if (built && readyToPlay) {
-            isPlaying = true;
+    this.play = function(bufferInstruction) {
+        if (built && _readyToPlay) {
+            if(!bufferInstruction) _isPlaying = true;
             lastTime = Date.now();
             if (sound) {
                 lastTime = sound.currentTime;
@@ -605,8 +729,8 @@ function CanvasVideo(src, options) {
         }
     }
 
-    this.pause = function() {
-        isPlaying = false;
+    this.pause = function(bufferInstruction) {
+        if(!bufferInstruction) _isPlaying = false;
         that.dispatchEvent(new Event('pause'));
         if (sound) {
             sound.pause();
@@ -614,7 +738,7 @@ function CanvasVideo(src, options) {
     }
 
     this.destroy = function() {
-        isPlaying = false;
+        _isPlaying = false;
         if (sound) {
             sound.destroy();
             sound = null;
@@ -635,6 +759,7 @@ function CanvasVideo(src, options) {
     /********************************************************************************
     // GETTER / SETTER
     /********************************************************************************/
+
 
     Object.defineProperty(that, 'width', {
         get: function() {
@@ -726,7 +851,7 @@ function CanvasVideo(src, options) {
         set: function(value) {
             seeking = true;
             if (sound) {
-                isPlaying = true;
+                _isPlaying = true;
                 sound.currentTime = value;
                 video.currentTime = value;
                 lastTime = sound.currentTime;
@@ -764,7 +889,7 @@ function CanvasVideo(src, options) {
 
     Object.defineProperty(that, 'readyState', {
         get: function() {
-            return readyToPlay ? 4 : 0;
+            return _readyToPlay ? 4 : 0;
         }
     });
 
@@ -788,6 +913,37 @@ function CanvasVideo(src, options) {
     });
 
 
+    Object.defineProperty(that, 'currentSrc', {
+        get: function() {
+            return video.currentSrc;
+        }
+    });
+
+
+    Object.defineProperty(that, 'bufferTime', {
+        get: function() {
+            return that.options.bufferTime;
+        },
+        set: function(value) {
+            that.options.bufferTime = value;
+            if(sound) sound.options.bufferTime = value;
+        }
+    });
+
+
+    Object.defineProperty(that, 'bufferLength', {
+        get: function() {
+            if(video.buffered.length>0) {
+                var currentTimeRange = Utils.getCurrentTimeRange(video);
+                return video.buffered.end(currentTimeRange)-video.currentTime;
+            } else {
+                return 0;
+            }
+
+        }
+    });
+
+
     /********************************************************************************
     // PRIVATES
     /********************************************************************************/
@@ -795,7 +951,53 @@ function CanvasVideo(src, options) {
 
 
     function calculate() {
-        if (isPlaying) {
+        // ------------------------------------------------------------------------------------
+
+        if (_alreadyDispatchWaiting && !that.options.audio)
+        {
+            var bt = Utils.capBufferTime(video, that.options.bufferTime);
+            var currentTimeRange = Utils.getCurrentTimeRange(video);
+            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt)
+            {
+                _alreadyDispatchWaiting = false;
+                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+                that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+                lastTime = Date.now();
+                if(_isPlaying) that.play(true);
+            } else {
+                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
+                if(perc<0) perc = 0;
+                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
+            }
+        }
+        // ------------------------------------------------------------------------------------
+        if (_alreadyDispatchWaiting && that.options.audio)
+        {
+            var bt = Utils.capBufferTime(video, that.options.bufferTime);
+            var currentTimeRange = Utils.getCurrentTimeRange(video);
+            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt)
+            {
+                _videoWaitFullyBuffer = false;
+                if(!sound._waitFullyBuffer) {
+                    _alreadyDispatchWaiting = false;
+                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+                    that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+                    lastTime = sound.currentTime;
+                    if(_isPlaying) that.play(true);
+                }
+
+            } else {
+                _videoWaitFullyBuffer = true;
+                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
+                if(perc<0) perc = 0;
+                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
+            }
+        }
+        // ------------------------------------------------------------------------------------
+
+        if (_isPlaying && !_alreadyDispatchWaiting) {
             if (that.options.audio) {
                 var time = sound.currentTime;
                 var elapsed = (time - lastTime);
@@ -806,11 +1008,36 @@ function CanvasVideo(src, options) {
 
             if (elapsed >= ((1000 / that.options.fps) / 1000)) {
                 if (!that.options.audio) {
-                    video.currentTime = (video.currentTime + (elapsed * that.options.playbackRate));
-                    lastTime = time;
+                    if (!_isWaitingFrame) {
+                        video.currentTime = (video.currentTime + (elapsed * that.options.playbackRate));
+                        lastTime = time;
+                        _isWaitingFrame = true;
+                    } else if (!_alreadyDispatchWaiting) {
+                        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                        that.pause(true);
+                        _alreadyDispatchWaiting = true;
+                    }
+
                 } else {
-                    video.currentTime = (video.currentTime + elapsed);
-                    lastTime = video.currentTime;
+                    if(sound._useWebAudio) {
+                        video.currentTime = (video.currentTime + elapsed);
+                        lastTime = video.currentTime;
+                    } else {
+                        if (!_isWaitingFrame) {
+                            video.currentTime = (Number(sound.currentTime.toFixed(2)) + elapsed);
+                            lastTime = Number(sound.currentTime.toFixed(2));
+                            _isWaitingFrame = true;
+                        } else if (!_alreadyDispatchWaiting) {
+                            var bt = Utils.capBufferTime(video, that.options.bufferTime);
+                            var currentTimeRange = Utils.getCurrentTimeRange(video);
+                            lastTime = Number(Number(sound.currentTime.toFixed(2)));
+                            if((video.buffered.end(currentTimeRange) - video.currentTime)/bt>Utils.capBufferTime(video, .3)) { // dirty hack
+                                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                                that.pause(true);
+                                _alreadyDispatchWaiting = true;
+                            }
+                        }
+                    }
                 }
             }
             // if we are at the end of the video stop
@@ -824,31 +1051,37 @@ function CanvasVideo(src, options) {
                         video.currentTime = 0;
                     }
                 } else {
-                    isPlaying = false;
+                    _isPlaying = false;
                     that.currentTime = 0;
                     return;
                 }
 
             }
-            requestAnimationFrame(calculate);
+            //requestAnimationFrame(calculate);
         }
+        requestAnimationFrame(calculate);
     }
 
     function draw() {
+
+        //if (!that.options.audio) {
+            if(!_alreadyDispatchWaiting) {
+                _isWaitingFrame = false;
+                _alreadyDispatchWaiting = false;
+            }
+
+        //}
         that.ctx.drawImage(video, 0, 0, video.width, video.height);
         that.dispatchEvent(new Event('timeupdate'));
-
         if (seeking) {
             that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
             that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
             seeking = false;
         }
-
-
     }
 
     function bothReady() {
-        readyToPlay = true;
+        _readyToPlay = true;
 
         if (!that.options.width) that.element.width = video.videoWidth;
         if (!that.options.height) that.element.height = video.videoHeight;
@@ -858,6 +1091,7 @@ function CanvasVideo(src, options) {
 
         that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
         that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+        that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
         if (that.options.autoplay) that.play();
     }
 
@@ -873,7 +1107,6 @@ function CanvasVideo(src, options) {
         setTimeout(function() {
             video.load();
         }, 50);
-
         // gestion de l'audio.
         if (that.options.audio) {
             var buffer = null;
@@ -882,10 +1115,17 @@ function CanvasVideo(src, options) {
                 loop: that.options.loop,
                 volume: that.options.volume,
                 rate: that.options.playbackRate,
-                arraybuffer: buffer
+                arraybuffer: buffer,
+                bufferTime: that.options.bufferTime
             });
             sound.addEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
             sound.addEventListener(CanvasVideoEvent.ENDED, audioEnded);
+            sound.addEventListener(CanvasVideoEvent.WAITING, audioWaiting);
+            sound.addEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
+            sound.addEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
+        } else {
+            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY_THROUGH), {});
+            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY), {});
         }
     }
 
@@ -928,6 +1168,9 @@ function CanvasVideo(src, options) {
         video.addEventListener('timeupdate', draw);
         video.addEventListener('canplay', videoCanPlay);
         video.addEventListener('canplaythrough', videoCanPlay);
+        video.addEventListener('waiting', onWaiting);
+        video.addEventListener('progress', onProgress);
+
         //video.addEventListener ( 'volumechange', function(e){} );
         //video.addEventListener ( 'loadstart', function(e){} );
     }
@@ -936,6 +1179,8 @@ function CanvasVideo(src, options) {
         video.removeEventListener('timeupdate', draw);
         video.removeEventListener('canplay', videoCanPlay);
         video.removeEventListener('canplaythrough', videoCanPlay);
+        video.removeEventListener('waiting', onWaiting);
+        video.removeEventListener('progress', onProgress);
     }
 
 
@@ -1022,44 +1267,81 @@ function CanvasVideo(src, options) {
     /********************************************************************************/
 
     function videoCanPlay(e) {
-        if (!videoReady) {
-            videoReady = true;
+        if (!_videoReady) {
+            _videoReady = true;
             if (!that.options.audio) {
                 bothReady();
             }
             /*else if ( that.options.audio && that.needTouchDevice  )
             {
-                audioReady = true;
+                _audioReady = true;
                 bothReady ();
             }*/
-            else if (audioReady) {
+            else if (_audioReady) {
                 bothReady();
             }
         }
     }
 
     function audioCanPlay(e) {
-        if (!audioReady) {
-            audioReady = true;
-            if (videoReady) bothReady();
+        if (!_audioReady) {
+            _audioReady = true;
+            if (_videoReady) bothReady();
         }
     }
 
 
-    // TO FIX : NO LOOP END.
+    function onWaiting(e) {
+        //console.log('Video Waiting');
+    }
+
+    function onProgress(e) {
+        //console.log("progress");
+    }
+
     function audioEnded(e) {
         that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
         if (that.options.loop) {
-            isPlaying = true;
+            _isPlaying = true;
             sound.currentTime = 0;
             video.currentTime = 0;
             lastTime = sound.currentTime;
         } else {
-            isPlaying = false;
+            _isPlaying = false;
             sound.currentTime = 0;
             video.currentTime = 0;
             lastTime = sound.currentTime;
             sound.pause();
+        }
+    }
+
+
+    function audioProgress(e) {
+        var bt = Utils.capBufferTime(video, that.options.bufferTime);
+        var currentTimeRange = Utils.getCurrentTimeRange(video);
+        var percVideo = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
+        if(percVideo<0) percVideo = 0;
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (e.datas.perc/2)+(percVideo/2) }));
+    }
+
+
+    function audioWaiting(e) {
+        if(!_alreadyDispatchWaiting) {
+            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+            that.pause(true);
+            _alreadyDispatchWaiting = true;
+        }
+    }
+
+    function audioReadyAfterWaiting(e) {
+        //console.log('audio ready');
+        if(!_videoWaitFullyBuffer) {
+            _alreadyDispatchWaiting = false;
+            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+            that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+            lastTime = Number(sound.currentTime.toFixed(2));
+            if(_isPlaying) that.play(true);
         }
     }
 

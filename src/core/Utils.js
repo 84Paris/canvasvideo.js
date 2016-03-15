@@ -81,7 +81,30 @@ var Utils = {
 
     },
 
-    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false
+    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false,
+
+    getCurrentTimeRange: function(media)
+    {
+        var i = media.buffered.length-1;
+        var result = i;
+        while(i>=0)
+        {
+            if (media.currentTime>media.buffered.start(i) && media.currentTime<media.buffered.end(i))
+            {
+                i = -1;
+            } else {
+                result = i;
+            }
+            i--;
+        }
+        return result;
+    },
+
+    capBufferTime : function (media, bufferTime)
+    {
+        if(media.currentTime+bufferTime>media.duration) return media.duration-media.currentTime;
+        else return bufferTime;
+    }
 
 
 }
