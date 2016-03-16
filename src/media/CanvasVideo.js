@@ -47,7 +47,7 @@ function CanvasVideo(src, options) {
         volume: 1,
         playbackRate: 1,
         audioBuffer: false,
-        bufferTime: 5
+        bufferTime: 4
     };
 
     this.src = src;
@@ -117,6 +117,11 @@ function CanvasVideo(src, options) {
     this.destroy = function() {
         _isPlaying = false;
         if (sound) {
+            sound.removeEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
+            sound.removeEventListener(CanvasVideoEvent.ENDED, audioEnded);
+            sound.removeEventListener(CanvasVideoEvent.WAITING, audioWaiting);
+            sound.removeEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
+            sound.removeEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
             sound.destroy();
             sound = null;
         }
