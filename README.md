@@ -14,11 +14,6 @@ This library draw video element on a canvas and sync it with the audio (from the
 * similar methods/events to video DOM element
 * Manages Audio by the webaudio API (with HTML5 Audio fallback)
 
-### Demonstration ###
-
-* [Simple example](#)
-* [Events & methods sandbox](#)
-
 ### Featured project ###
 
 * [because-recollection.com](http://www.because-recollection.com)
