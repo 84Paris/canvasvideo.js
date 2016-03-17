@@ -95,6 +95,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
         },
         set: function(value) {
             that.options.loop = value;
+            //if(!_useWebAudio) sound.source.loop = that.options.loop;
         }
     });
 
@@ -212,6 +213,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
         } else {
             sound.source.src = src;
             sound.source.volume = that.options.volume;
+            //sound.source.loop = that.options.loop;
             sound.source.addEventListener('canplaythrough', canPlay)
             sound.source.addEventListener('ended', onEnded);
             //sound.source.addEventListener('waiting', onWaiting);
@@ -310,6 +312,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
     }
 
     function onEnded(e) {
+        //console.log('ended');
         that.dispatchEvent(new Event(CanvasVideoEvent.ENDED, {}));
         if (that.options.loop) {
             stopSound();
