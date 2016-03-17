@@ -102,7 +102,7 @@ function playVideo()
 </video>
 
 <script>
-    var video = document.getElementByID('myvideo');
+    var video = document.getElementById('myvideo');
     if (navigator.userAgent.toLowerCase().indexOf('iphone') >= 0)
     {
         document.body.removeChild(video);
@@ -141,7 +141,7 @@ var video = new CanvasVideo(src, options);
 	* **audioBuffer:** `Boolean` *(default: `false`)* Set to true to force HTML5 Audio (the audio file could be play without to be fully preload).
 	* **audioContext:** `AudioContext` *(optional)* the AudioContext to use.
     * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
-    * **bufferTime:** `Number` *(default: `2.0`)* The number of seconds assigned to the buffer (only use if you don't use xhr).
+    * **bufferTime:** `Number` *(default: `4.0`)* The number of seconds assigned to the buffer (only use if you don't use xhr).
 	* **canvas:** `<canvas>` *(optional)* the canvas to use as canvasvideo.
     * **fps:** `Number` *(default: `24.0`)* Frame per seconds.
     * **loop:** `Boolean` *(default: `false`)* Set to `true` to automatically start over again when finished.

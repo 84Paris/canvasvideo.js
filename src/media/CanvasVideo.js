@@ -54,7 +54,6 @@ function CanvasVideo(src, options) {
 
     function _constructor(src, options) {
         needTouchDevice = Utils.isIOSdevice;
-
         // copy options
         for (var i in options) {
             that.options[i] = options[i];
@@ -191,6 +190,7 @@ function CanvasVideo(src, options) {
             return that.options.loop;
         },
         set: function(value) {
+            if(sound) sound.loop = value;
             that.options.loop = value;
         }
     });
@@ -317,6 +317,8 @@ function CanvasVideo(src, options) {
         get: function() {
             if(video.buffered.length>0) {
                 var currentTimeRange = Utils.getCurrentTimeRange(video);
+                //console.log(video.buffered);
+                //console.log(currentTimeRange + ' : '+video.buffered.end(currentTimeRange)+" - "+video.currentTime+"/"+sound.currentTime+"/"+video.duration);
                 return video.buffered.end(currentTimeRange)-video.currentTime;
             } else {
                 return 0;
@@ -358,7 +360,7 @@ function CanvasVideo(src, options) {
         {
             var bt = Utils.capBufferTime(video, that.options.bufferTime);
             var currentTimeRange = Utils.getCurrentTimeRange(video);
-            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt)
+            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt || bt === 0)
             {
                 _videoWaitFullyBuffer = false;
                 if(!sound._waitFullyBuffer) {
@@ -374,6 +376,8 @@ function CanvasVideo(src, options) {
                 _videoWaitFullyBuffer = true;
                 var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
                 if(perc<0) perc = 0;
+                //console.log(((perc/2)+(sound.bufferLengthPerc/2)));
+                //console.log ( video.currentTime );
                 that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
             }
         }
@@ -685,9 +689,12 @@ function CanvasVideo(src, options) {
         that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
         if (that.options.loop) {
             _isPlaying = true;
+            _isWaitingFrame = false;
+            _alreadyDispatchWaiting = false;
             sound.currentTime = 0;
             video.currentTime = 0;
-            lastTime = sound.currentTime;
+            //lastTime = sound.currentTime;
+            //that.currentTime = 0;
         } else {
             _isPlaying = false;
             sound.currentTime = 0;
@@ -708,11 +715,13 @@ function CanvasVideo(src, options) {
 
 
     function audioWaiting(e) {
+        /*
         if(!_alreadyDispatchWaiting) {
             that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
             that.pause(true);
             _alreadyDispatchWaiting = true;
         }
+        */
     }
 
     function audioReadyAfterWaiting(e) {
