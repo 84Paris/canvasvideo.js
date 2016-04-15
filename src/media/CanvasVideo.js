@@ -1,7 +1,7 @@
 /**
  * CanvasVideo
  *
- * @class
+ * @class CanvasVideo
  * @author Jean-Vincent Roger - 84.Paris
  */
 
@@ -19,27 +19,28 @@ var EventDispatcher = require('../event/EventDispatcher'),
 
 
 function CanvasVideo(src, options) {
+
     EventDispatcher.call(this);
-
     var that = this;
-
-    var canvas, video, sound;
-    var _videoReady = false,
+    // main variables.
+    var canvas, ctx, video, sound;
+    // calcul variables.
+    var _lastTime,
+        _currentTime = 0;
+    // status variables.
+    var _built = false,
+        _needTouchDevice,
+        _videoReady = false,
         _audioReady = false,
         _readyToPlay = false,
+        _seeking = false,
         _isPlaying = false,
-        _isWaitingFrame = false,
-        _alreadyDispatchWaiting = false,
-        _videoWaitFullyBuffer = false;
+        _isBuffering = false,
+        _waitVideoUpdate = false;
+    // constants
+    var MIN_BUFFER_ALLOW = 1;
 
-    var lastTime, time, elapsed;
-    var currentTime = 0,
-        needTouchDevice;
-
-    var built = false;
-    var seeking = false;
-
-    this.options = {
+    that.options = {
         fps: 24,
         loop: true,
         xhr: false,
@@ -50,10 +51,8 @@ function CanvasVideo(src, options) {
         bufferTime: 4
     };
 
-    this.src = src;
-
     function _constructor(src, options) {
-        needTouchDevice = Utils.isIOSdevice;
+        _needTouchDevice = Utils.isIOSdevice;
         // copy options
         for (var i in options) {
             that.options[i] = options[i];
@@ -62,52 +61,77 @@ function CanvasVideo(src, options) {
         if (that.options.audio) {
             sound = new AudioPlayer(that.options.audioContext, that.options.audioBuffer);
             // if audio driving, increase FPS for smouth
-            if (!options.fps) {
-                that.options.fps = 33;
-            }
+            if (!options.fps) that.options.fps = 33;
         }
 
-        if (options.canvas) that.element = options.canvas;
-        else that.element = document.createElement('canvas');
-        that.ctx = that.element.getContext('2d');
+        if (that.options.bufferTime < MIN_BUFFER_ALLOW) that.options.bufferTime = MIN_BUFFER_ALLOW;
 
-        if (that.options.width) that.element.width = that.options.width;
-        if (that.options.height) that.element.height = that.options.height;
+        if (options.canvas) canvas = options.canvas;
+        else canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d');
 
+        if (that.options.width) canvas.width = that.options.width;
+        if (that.options.height) canvas.height = that.options.height;
+
+        // if autopreload
         if (that.options.preload === true || that.options.autoplay === true) that.load();
     }
 
 
+    /********************************************************************************
+    // PUBLIC METHODS
+    /********************************************************************************/
+
+
     this.load = function() {
-        if (!built) {
+        if (!_built) {
             if (that.options.xhr) {
                 xhrPreload(src);
             } else {
                 build(src);
             }
+            that.dispatchEvent(new Event(CanvasVideoEvent.LOAD_START));
         }
     }
 
-    this.play = function(bufferInstruction) {
-        if (built && _readyToPlay) {
-            if(!bufferInstruction) _isPlaying = true;
-            lastTime = Date.now();
+    this.play = function(forBuffering) {
+        if (_built && _readyToPlay) {
+            _lastTime = Date.now();
             if (sound) {
-                lastTime = sound.currentTime;
+                _lastTime = sound.currentTime;
                 sound.play();
             }
-            draw();
-            calculate();
-            that.dispatchEvent(new Event('play'));
+            if (!forBuffering) {
+                /*
+                if(checkBufferStatus()) {
+                    _isPlaying = true;
+                    that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
+                } else {
+                    _isPlaying = true;
+                    _isBuffering = true;
+                    that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                }
+                */
+                _isPlaying = true;
+                that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
+
+
+
+                draw();
+                update();
+            }
         } else {
             that.options.autoplay = true;
-            if (!built) this.load();
+            if (!_built) this.load();
         }
     }
 
-    this.pause = function(bufferInstruction) {
-        if(!bufferInstruction) _isPlaying = false;
-        that.dispatchEvent(new Event('pause'));
+    this.pause = function(forBuffering) {
+        if (!forBuffering) {
+            _isPlaying = false;
+            _isBuffering = false;
+        }
+        that.dispatchEvent(new Event(CanvasVideoEvent.PAUSE));
         if (sound) {
             sound.pause();
         }
@@ -115,18 +139,9 @@ function CanvasVideo(src, options) {
 
     this.destroy = function() {
         _isPlaying = false;
-        if (sound) {
-            sound.removeEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
-            sound.removeEventListener(CanvasVideoEvent.ENDED, audioEnded);
-            sound.removeEventListener(CanvasVideoEvent.WAITING, audioWaiting);
-            sound.removeEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
-            sound.removeEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
-            sound.destroy();
-            sound = null;
-        }
         Utils.removeVideoElement(video);
-        unbind();
-        that.ctx.clearRect(0, 0, video.width, video.height);
+        setEvents(false);
+        ctx.clearRect(0, 0, video.width, video.height);
         video = null;
     }
 
@@ -137,300 +152,58 @@ function CanvasVideo(src, options) {
         return v.canPlayType(type);
     }
 
-    /********************************************************************************
-    // GETTER / SETTER
-    /********************************************************************************/
-
-
-    Object.defineProperty(that, 'width', {
-        get: function() {
-            return that.element.width;
-        },
-        set: function(value) {
-            that.options.width = value;
-            that.element.width = value;
-            video.width = value;
-        }
-    });
-
-    Object.defineProperty(that, 'height', {
-        get: function() {
-            return that.element.height;
-        },
-        set: function(value) {
-            that.options.height = value;
-            that.element.height = value;
-            video.height = value;
-        }
-    });
-
-    Object.defineProperty(that, 'videoWidth', {
-        get: function() {
-            return video.videoWidth;
-        }
-    });
-
-    Object.defineProperty(that, 'videoHeight', {
-        get: function() {
-            return video.videoHeight;
-        }
-    });
-
-    Object.defineProperty(that, 'fps', {
-        get: function() {
-            return that.options.fps;
-        },
-        set: function(value) {
-            if (that.options.audio) that.options.fps = value;
-        }
-    });
-
-    Object.defineProperty(that, 'loop', {
-        get: function() {
-            return that.options.loop;
-        },
-        set: function(value) {
-            if(sound) sound.loop = value;
-            that.options.loop = value;
-        }
-    });
-
-    Object.defineProperty(that, 'volume', {
-        get: function() {
-            return that.options.volume;
-        },
-        set: function(value) {
-            that.options.volume = value;
-            if (sound) sound.volume = value;
-        }
-    });
-
-    Object.defineProperty(that, 'muted', {
-        get: function() {
-            if (!sound || sound.volume != 0) return false;
-            else return true;
-        },
-        set: function(value) {
-            if (value) {
-                if (sound) sound.volume = 0;
-            } else {
-                if (sound) sound.volume = that.options.volume;
-            }
-        }
-    });
-
-    Object.defineProperty(that, 'needTouchDevice', {
-        get: function() {
-            return needTouchDevice;
-        }
-    });
-
-    // A affiner.
-    Object.defineProperty(that, 'currentTime', {
-        get: function() {
-            return currentTime;
-        },
-        set: function(value) {
-            seeking = true;
-            if (sound) {
-                _isPlaying = true;
-                sound.currentTime = value;
-                video.currentTime = value;
-                lastTime = sound.currentTime;
-            } else {
-                video.currentTime = value;
-            }
-        }
-    });
-
-    Object.defineProperty(that, 'duration', {
-        get: function() {
-            if (video) return video.duration;
-            else return NaN;
-        }
-    });
-
-    Object.defineProperty(that, 'seeking', {
-        get: function() {
-            return seeking;
-        }
-    });
-
-    Object.defineProperty(that, 'playbackRate', {
-        get: function() {
-            return that.options.playbackRate;
-        },
-        set: function(value) {
-            //if ( video ) video.playbackRate = value;
-            that.options.playbackRate = value;
-            if (that.options.audio) {
-                if (sound) sound.playbackRate = value;
-            }
-        }
-    });
-
-    Object.defineProperty(that, 'readyState', {
-        get: function() {
-            return _readyToPlay ? 4 : 0;
-        }
-    });
-
-    Object.defineProperty(that, 'controls', {
-        get: function() {
-            console.warn('controls attribute is not currently supported by CanvasVideo.');
-        },
-        set: function(value) {
-            console.warn('controls attribute is not currently supported by CanvasVideo.');
-        }
-    });
-
-
-    Object.defineProperty(that, 'autoplay', {
-        get: function() {
-            return that.options.autoplay;
-        },
-        set: function(value) {
-            that.options.autoplay = true;
-        }
-    });
-
-
-    Object.defineProperty(that, 'currentSrc', {
-        get: function() {
-            return video.currentSrc;
-        }
-    });
-
-
-    Object.defineProperty(that, 'bufferTime', {
-        get: function() {
-            return that.options.bufferTime;
-        },
-        set: function(value) {
-            that.options.bufferTime = value;
-            if(sound) sound.options.bufferTime = value;
-        }
-    });
-
-
-    Object.defineProperty(that, 'bufferLength', {
-        get: function() {
-            if(video.buffered.length>0) {
-                var currentTimeRange = Utils.getCurrentTimeRange(video);
-                //console.log(video.buffered);
-                //console.log(currentTimeRange + ' : '+video.buffered.end(currentTimeRange)+" - "+video.currentTime+"/"+sound.currentTime+"/"+video.duration);
-                return video.buffered.end(currentTimeRange)-video.currentTime;
-            } else {
-                return 0;
-            }
-
-        }
-    });
-
 
     /********************************************************************************
-    // PRIVATES
+    // PRIVATE METHODS
     /********************************************************************************/
 
+    function update() {
+        if (_isBuffering) checkBufferStatus();
+        if (_isPlaying && !_isBuffering) {
 
-
-    function calculate() {
-        // ------------------------------------------------------------------------------------
-
-        if (_alreadyDispatchWaiting && !that.options.audio)
-        {
-            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-            var currentTimeRange = Utils.getCurrentTimeRange(video);
-            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt)
-            {
-                _alreadyDispatchWaiting = false;
-                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-                that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-                lastTime = Date.now();
-                if(_isPlaying) that.play(true);
-            } else {
-                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-                if(perc<0) perc = 0;
-                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
-            }
-        }
-        // ------------------------------------------------------------------------------------
-        if (_alreadyDispatchWaiting && that.options.audio)
-        {
-            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-            var currentTimeRange = Utils.getCurrentTimeRange(video);
-            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt || bt === 0)
-            {
-                _videoWaitFullyBuffer = false;
-                if(!sound._waitFullyBuffer) {
-                    _alreadyDispatchWaiting = false;
-                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-                    that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-                    lastTime = sound.currentTime;
-                    if(_isPlaying) that.play(true);
-                }
-
-            } else {
-                _videoWaitFullyBuffer = true;
-                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-                if(perc<0) perc = 0;
-                //console.log(((perc/2)+(sound.bufferLengthPerc/2)));
-                //console.log ( video.currentTime );
-                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
-            }
-        }
-        // ------------------------------------------------------------------------------------
-
-        if (_isPlaying && !_alreadyDispatchWaiting) {
             if (that.options.audio) {
                 var time = sound.currentTime;
-                var elapsed = (time - lastTime);
+                var delta = (time - _lastTime);
             } else {
                 var time = Date.now();
-                var elapsed = (time - lastTime) / 1000;
+                var delta = (time - _lastTime) / 1000;
             }
 
-            if (elapsed >= ((1000 / that.options.fps) / 1000)) {
+            if (delta >= ((1000 / that.options.fps) / 1000)) {
                 if (!that.options.audio) {
-                    if (!_isWaitingFrame) {
-                        video.currentTime = (video.currentTime + (elapsed * that.options.playbackRate));
-                        lastTime = time;
-                        _isWaitingFrame = true;
-                    } else if (!_alreadyDispatchWaiting) {
-                        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                    var currentTimeRange = Utils.getCurrentTimeRange(video);
+                    var nextCurrentTime = (video.currentTime + (delta * that.options.playbackRate));
+                    if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false) && nextCurrentTime <= video.duration) {
+                        _isBuffering = true;
                         that.pause(true);
-                        _alreadyDispatchWaiting = true;
+                        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                    } else {
+                        video.currentTime = nextCurrentTime;
+                        _lastTime = time;
                     }
 
                 } else {
-                    if(sound._useWebAudio) {
-                        video.currentTime = (video.currentTime + elapsed);
-                        lastTime = video.currentTime;
+
+                    var currentTimeRange = Utils.getCurrentTimeRange(video);
+                    var nextCurrentTime = (video.currentTime + delta);
+                    var videoNeedBuffer = ((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false);
+                    var audioNeedBuffer = sound.needBuffering(nextCurrentTime, MIN_BUFFER_ALLOW);
+
+                    if((videoNeedBuffer || audioNeedBuffer) && nextCurrentTime <= video.duration) {
+                        _isBuffering = true;
+                        that.pause(true);
+                        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
                     } else {
-                        if (!_isWaitingFrame) {
-                            video.currentTime = (Number(sound.currentTime.toFixed(2)) + elapsed);
-                            lastTime = Number(sound.currentTime.toFixed(2));
-                            _isWaitingFrame = true;
-                        } else if (!_alreadyDispatchWaiting) {
-                            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-                            var currentTimeRange = Utils.getCurrentTimeRange(video);
-                            lastTime = Number(Number(sound.currentTime.toFixed(2)));
-                            if((video.buffered.end(currentTimeRange) - video.currentTime)/bt>Utils.capBufferTime(video, .3)) { // dirty hack
-                                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-                                that.pause(true);
-                                _alreadyDispatchWaiting = true;
-                            }
-                        }
+                        video.currentTime = nextCurrentTime;
+                        _lastTime = video.currentTime;
                     }
+
                 }
             }
             // if we are at the end of the video stop
-            currentTime = (Math.round(parseFloat(video.currentTime) * 10000) / 10000);
+            _currentTime = (Math.round(parseFloat(video.currentTime) * 10000) / 10000);
             var duration = (Math.round(parseFloat(video.duration) * 10000) / 10000);
-            if (currentTime >= duration) {
-                //console.log('currentTime: ' + currentTime + ' duration: ' + video.duration);
+            if (_currentTime >= duration) {
                 if (!that.options.audio) that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
                 if (that.options.loop) {
                     if (!that.options.audio) {
@@ -441,59 +214,38 @@ function CanvasVideo(src, options) {
                     that.currentTime = 0;
                     return;
                 }
-
             }
-            //requestAnimationFrame(calculate);
+
         }
-        requestAnimationFrame(calculate);
+        requestAnimationFrame(update);
     }
 
     function draw() {
-
-        //if (!that.options.audio) {
-            if(!_alreadyDispatchWaiting) {
-                _isWaitingFrame = false;
-                _alreadyDispatchWaiting = false;
-            }
-
-        //}
-        that.ctx.drawImage(video, 0, 0, video.width, video.height);
-        that.dispatchEvent(new Event('timeupdate'));
-        if (seeking) {
+        _waitVideoUpdate = false;
+        ctx.drawImage(video, 0, 0, video.width, video.height);
+        that.dispatchEvent(new Event(CanvasVideoEvent.TIME_UPDATE));
+        if (_seeking) {
             that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
             that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-            seeking = false;
+            that.dispatchEvent(new Event(CanvasVideoEvent.SEEKED));
+            _seeking = false;
         }
     }
 
-    function bothReady() {
-        _readyToPlay = true;
-
-        if (!that.options.width) that.element.width = video.videoWidth;
-        if (!that.options.height) that.element.height = video.videoHeight;
-
-        video.width = that.element.width;
-        video.height = that.element.height;
-
-        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-        that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-        if (that.options.autoplay) that.play();
-    }
-
     function build(src) {
-        built = true;
-        // create video element
+        _built = true;
         video = createVideoElement(src);
-        bind();
-        if (!that.options.id) that.id = video.id ? video.id : Utils.uid();
-        else that.id = that.options.id;
-        video.id = that.id;
+        setEvents(true);
+
+        if (!that.options.id) canvas.id = Utils.uid();
+        else canvas.id = that.options.id;
 
         setTimeout(function() {
             video.load();
         }, 50);
+
         // gestion de l'audio.
+
         if (that.options.audio) {
             var buffer = null;
             if (src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
@@ -504,28 +256,26 @@ function CanvasVideo(src, options) {
                 arraybuffer: buffer,
                 bufferTime: that.options.bufferTime
             });
-            sound.addEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
+            sound.addEventListener(CanvasVideoEvent.CAN_PLAY, onAudioCanPlay);
             sound.addEventListener(CanvasVideoEvent.ENDED, audioEnded);
             sound.addEventListener(CanvasVideoEvent.WAITING, audioWaiting);
             sound.addEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
             sound.addEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
-        } else {
-            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY_THROUGH), {});
-            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY), {});
         }
+        // else {
+        //     that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY_THROUGH), {});
+        //     that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY), {});
+        // }
     }
 
-
-    // traitement url
     function xhrPreload(src) {
         var videoInfos = getVideoInfos(src);
         var url = videoInfos.src;
         var mime = videoInfos.mime;
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, true);
-        //xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-        xhr.responseType = "arraybuffer";
 
+        xhr.open("GET", url, true);
+        xhr.responseType = "arraybuffer";
         xhr.onload = function(oEvent) {
             var blob = URL.createObjectURL(new Blob([oEvent.target.response], {
                 type: mime
@@ -535,38 +285,66 @@ function CanvasVideo(src, options) {
                 mime: mime,
                 arraybuffer: xhr.response
             });
+            that.dispatchEvent(new Event(CanvasVideoEvent.COMPLETE));
         };
-
         xhr.onprogress = function(oEvent) {
             if (oEvent.lengthComputable) {
                 var perc = oEvent.loaded / oEvent.total;
                 that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {
                     perc: perc
                 }));
-                // do something with this
             }
         }
-
         xhr.send();
     }
 
-    function bind() {
-        video.addEventListener('timeupdate', draw);
-        video.addEventListener('canplay', videoCanPlay);
-        video.addEventListener('canplaythrough', videoCanPlay);
-        video.addEventListener('waiting', onWaiting);
-        video.addEventListener('progress', onProgress);
 
-        //video.addEventListener ( 'volumechange', function(e){} );
-        //video.addEventListener ( 'loadstart', function(e){} );
+    function ready() {
+        _readyToPlay = true;
+
+        if (!that.options.width) canvas.width = video.videoWidth;
+        if (!that.options.height) canvas.height = video.videoHeight;
+        video.width = canvas.width;
+        video.height = canvas.height;
+
+        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+        that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+
+        if (that.options.autoplay) that.play();
     }
 
-    function unbind() {
-        video.removeEventListener('timeupdate', draw);
-        video.removeEventListener('canplay', videoCanPlay);
-        video.removeEventListener('canplaythrough', videoCanPlay);
-        video.removeEventListener('waiting', onWaiting);
-        video.removeEventListener('progress', onProgress);
+    function checkBufferStatus() {
+
+        var bt = Utils.capBufferTime(video, that.options.bufferTime);
+        var currentTimeRange = Utils.getCurrentTimeRange(video);
+
+        var audioBufferFull = that.options.audio ? (sound.bufferLength >= bt) : true;
+
+        if (video.buffered.end(currentTimeRange) - video.currentTime >= bt && audioBufferFull) {
+            if (_isBuffering) {
+                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+                if (_isPlaying) that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+                _isBuffering = false;
+                that.play(true);
+            }
+            return true;
+        } else {
+            return false;
+        }
+
+
+    }
+
+
+    function setEvents(listen) {
+        var method = listen === false ? 'removeEventListener' : 'addEventListener';
+        video[method]('timeupdate', draw);
+        video[method]('canplay', onVideoCanPlay);
+        video[method]('canplaythrough', onVideoCanPlay);
+        video[method]('waiting', onWaiting);
+        video[method]('progress', onProgress);
     }
 
 
@@ -604,25 +382,6 @@ function CanvasVideo(src, options) {
         return s;
     }
 
-
-
-    function getAudioSrc() {
-        var src;
-        if (typeof options.audio === "boolean") {
-            var sources = video.querySelectorAll('source');
-            for (var i = 0; i <= sources.length - 1; i++) {
-                if (Utils.getAudioSupport(sources[i].type) || Utils.getAudioSupport('video/' + Utils.getExtension(sources[i].src)) || !sources[i].type) {
-                    src = sources[i].src;
-                    break;
-                }
-            }
-        } else if (typeof options.audio === "string") {
-            src = options.audio;
-        }
-        return src;
-    }
-
-
     function getVideoInfos(src) {
         var o = {};
         if (Array.isArray(src)) {
@@ -642,101 +401,300 @@ function CanvasVideo(src, options) {
         } else {
             o = src;
         }
-
         o.mime = o.mime ? o.mime : "video/" + Utils.getExtension(o.src);
         return o;
     }
 
+    function getAudioSrc() {
+        var src;
+        if (typeof that.options.audio === "boolean") {
+            var sources = video.querySelectorAll('source');
+            for (var i = 0; i <= sources.length - 1; i++) {
+                if (Utils.getAudioSupport(sources[i].type) || Utils.getAudioSupport('video/' + Utils.getExtension(sources[i].src)) || !sources[i].type) {
+                    src = sources[i].src;
+                    break;
+                }
+            }
+        } else if (typeof that.options.audio === "string") {
+            src = that.options.audio;
+        }
+        return src;
+    }
 
     /********************************************************************************
     // HANDLERS
     /********************************************************************************/
 
-    function videoCanPlay(e) {
+    function onAudioCanPlay(e) {
+        if (!_audioReady) {
+            _audioReady = true;
+            if (_videoReady) ready();
+        }
+    }
+
+    function onVideoCanPlay(e) {
         if (!_videoReady) {
             _videoReady = true;
             if (!that.options.audio) {
-                bothReady();
-            }
-            /*else if ( that.options.audio && that.needTouchDevice  )
-            {
-                _audioReady = true;
-                bothReady ();
-            }*/
-            else if (_audioReady) {
-                bothReady();
+                ready();
+            } else if (_audioReady) {
+                ready();
             }
         }
     }
-
-    function audioCanPlay(e) {
-        if (!_audioReady) {
-            _audioReady = true;
-            if (_videoReady) bothReady();
-        }
-    }
-
 
     function onWaiting(e) {
-        //console.log('Video Waiting');
+        console.log('Video Waiting');
     }
 
     function onProgress(e) {
-        //console.log("progress");
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
     }
 
     function audioEnded(e) {
         that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
         if (that.options.loop) {
             _isPlaying = true;
-            _isWaitingFrame = false;
-            _alreadyDispatchWaiting = false;
             sound.currentTime = 0;
             video.currentTime = 0;
-            //lastTime = sound.currentTime;
-            //that.currentTime = 0;
+            _lastTime = sound.currentTime;
+            that.currentTime = 0;
         } else {
             _isPlaying = false;
             sound.currentTime = 0;
             video.currentTime = 0;
-            lastTime = sound.currentTime;
+            _lastTime = sound.currentTime;
             sound.pause();
         }
     }
 
-
     function audioProgress(e) {
-        var bt = Utils.capBufferTime(video, that.options.bufferTime);
-        var currentTimeRange = Utils.getCurrentTimeRange(video);
-        var percVideo = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-        if(percVideo<0) percVideo = 0;
-        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (e.datas.perc/2)+(percVideo/2) }));
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
     }
 
-
     function audioWaiting(e) {
-        /*
-        if(!_alreadyDispatchWaiting) {
-            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-            that.pause(true);
-            _alreadyDispatchWaiting = true;
-        }
-        */
+
     }
 
     function audioReadyAfterWaiting(e) {
-        //console.log('audio ready');
-        if(!_videoWaitFullyBuffer) {
-            _alreadyDispatchWaiting = false;
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-            that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-            lastTime = Number(sound.currentTime.toFixed(2));
-            if(_isPlaying) that.play(true);
-        }
+
     }
 
 
+    /********************************************************************************
+    // GETTER / SETTER
+    /********************************************************************************/
+
+
+    Object.defineProperty(that, 'autoplay', {
+        get: function() {
+            return that.options.autoplay;
+        },
+        set: function(value) {
+            that.options.autoplay = true;
+        }
+    });
+
+    Object.defineProperty(that, 'bufferLength', {
+        get: function() {
+            var currentTimeRange = Utils.getCurrentTimeRange(video);
+            var result = video.buffered.length === 0 ? 0 : (video.buffered.end(currentTimeRange) - video.currentTime);
+            result = result >= 0 ? result : 0;
+            if (that.options.audio && sound) {
+                result = Math.min (result, sound.bufferLength);
+            }
+            return result;
+        }
+    });
+
+    Object.defineProperty(that, 'bufferTime', {
+        get: function() {
+            return Utils.capBufferTime(video, that.options.bufferTime);
+        },
+        set: function(value) {
+            that.options.bufferTime = value >= MIN_BUFFER_ALLOW ? value : MIN_BUFFER_ALLOW;
+            if (sound) sound.options.bufferTime = that.options.bufferTime;
+        }
+    });
+
+    Object.defineProperty(that, 'controls', {
+        get: function() {
+            console.warn('controls attribute is not currently supported by CanvasVideo.');
+        },
+        set: function(value) {
+            console.warn('controls attribute is not currently supported by CanvasVideo.');
+        }
+    });
+
+    Object.defineProperty(that, 'currentSrc', {
+        get: function() {
+            return video.currentSrc;
+        }
+    });
+
+    Object.defineProperty(that, 'currentTime', {
+        get: function() {
+            return _currentTime;
+        },
+        set: function(value) {
+            _seeking = true;
+            that.dispatchEvent(new Event(CanvasVideoEvent.SEEKING));
+            if (sound) {
+                _isPlaying = true;
+                sound.currentTime = value;
+                video.currentTime = value;
+                _lastTime = sound.currentTime;
+            } else {
+                video.currentTime = value;
+            }
+        }
+    });
+
+    Object.defineProperty(that, 'duration', {
+        get: function() {
+            if (video) return video.duration;
+            else return NaN;
+        }
+    });
+
+    Object.defineProperty(that, 'element', {
+        get: function() {
+            return canvas;
+        }
+    });
+
+    Object.defineProperty(that, 'fps', {
+        get: function() {
+            return that.options.fps;
+        },
+        set: function(value) {
+            if (that.options.audio) that.options.fps = value;
+        }
+    });
+
+    Object.defineProperty(that, 'height', {
+        get: function() {
+            return canvas.height;
+        },
+        set: function(value) {
+            that.options.height = value;
+            canvas.height = value;
+            video.height = value;
+        }
+    });
+
+    Object.defineProperty(that, 'id', {
+        get: function() {
+            return canvas.id;
+        },
+        set: function(value) {
+            canvas.id = value;
+        }
+    });
+
+    Object.defineProperty(that, 'loop', {
+        get: function() {
+            return that.options.loop;
+        },
+        set: function(value) {
+            if (sound) sound.loop = value;
+            that.options.loop = value;
+        }
+    });
+
+    Object.defineProperty(that, 'muted', {
+        get: function() {
+            if (!sound || sound.volume != 0) return false;
+            else return true;
+        },
+        set: function(value) {
+            if (value) {
+                if (sound) sound.volume = 0;
+            } else {
+                if (sound) sound.volume = that.options.volume;
+            }
+        }
+    });
+
+    Object.defineProperty(that, 'needTouchDevice', {
+        get: function() {
+            return _needTouchDevice;
+        }
+    });
+
+    Object.defineProperty(that, 'paused', {
+        get: function() {
+            return !_isPlaying;
+        }
+    });
+
+    Object.defineProperty(that, 'playbackRate', {
+        get: function() {
+            return that.options.playbackRate;
+        },
+        set: function(value) {
+            that.options.playbackRate = value;
+            if (that.options.audio && sound) sound.playbackRate = value;
+        }
+    });
+
+    Object.defineProperty(that, 'readyState', {
+        get: function() {
+            return _readyToPlay ? 4 : 0;
+        }
+    });
+
+    Object.defineProperty(that, 'seeking', {
+        get: function() {
+            return _seeking;
+        }
+    });
+
+    // TODO
+    Object.defineProperty(that, 'src', {
+        get: function() {
+            return src;
+        }
+    });
+
+    Object.defineProperty(that, 'videoHeight', {
+        get: function() {
+            return video.videoHeight;
+        }
+    });
+
+    Object.defineProperty(that, 'videoWidth', {
+        get: function() {
+            return video.videoWidth;
+        }
+    });
+
+    Object.defineProperty(that, 'volume', {
+        get: function() {
+            return that.options.volume;
+        },
+        set: function(value) {
+            that.options.volume = value;
+            if (sound) sound.volume = value;
+        }
+    });
+
+    Object.defineProperty(that, 'width', {
+        get: function() {
+            return canvas.width;
+        },
+        set: function(value) {
+            that.options.width = value;
+            canvas.width = value;
+            video.width = value;
+        }
+    });
+
+    Object.defineProperty(that, 'xhr', {
+        get: function() {
+            return that.options.xhr;
+        }
+    });
 
     _constructor(src, options);
 }

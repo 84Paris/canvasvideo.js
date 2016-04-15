@@ -34,9 +34,8 @@ function AudioPlayer(audiocontext, audioBuffer) {
         _iOSEnabled = false,
         _playRequest = false;
 
-    that._useWebAudio = !audioBuffer;
-    that._waitFullyBuffer = false;
-    that.bufferLengthPerc = 0;
+
+    this._useWebAudio = !audioBuffer;
 
     function _constructor(audiocontext) {
         if (that._useWebAudio) webAudioConstructor(audiocontext);
@@ -48,7 +47,6 @@ function AudioPlayer(audiocontext, audioBuffer) {
     }
 
     this.set = function(src, options) {
-        // copy options
         for (var i in options) {
             that.options[i] = options[i];
         }
@@ -77,6 +75,17 @@ function AudioPlayer(audiocontext, audioBuffer) {
         pauseSound();
     }
 
+    this.needBuffering = function (nextCurrentTime, minBufferAllow) {
+        if(!that._useWebAudio) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            return ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, minBufferAllow) || Utils.getCurrentTimeRange(sound.source, nextCurrentTime) === false);
+        }
+        else {
+            return false; // temp
+        }
+
+    }
+
     this.destroy = function() {
         stopSound();
         sound.source.disconnect(0);
@@ -84,6 +93,203 @@ function AudioPlayer(audiocontext, audioBuffer) {
         masterGain = null;
         sound = null;
     }
+
+
+    /********************************************************************************
+    // PRIVATES
+    /********************************************************************************/
+
+
+    function webAudioConstructor(audiocontext) {
+        // Create audio context
+        if (audiocontext != null) {
+            ctx = audiocontext;
+        } else if (typeof AudioContext !== 'undefined') {
+            ctx = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            ctx = new webkitAudioContext();
+        } else {
+            html5AudioConstructor();
+            return;
+        }
+        // Create the master gain node
+        masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
+        masterGain.connect(ctx.destination);
+        //console.log('WebAudio API');
+    }
+
+    function html5AudioConstructor() {
+        that._useWebAudio = false;
+        sound.source = new Audio();
+        //console.log('HTML5 Audio');
+    }
+
+
+    function preload(src) {
+        if (that._useWebAudio) {
+            masterGain.gain.value = that.options.volume;
+            // check if src is an arraybuffer
+            if (that.options.arraybuffer != null) {
+                decodeAudio(that.options.arraybuffer);
+            } else {
+                // need to load.
+                xhr = new XMLHttpRequest();
+                xhr.open('get', src, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function() {
+                    decodeAudio(xhr.response);
+                }
+                xhr.send();
+            }
+        } else {
+            sound.source.src = src;
+            sound.source.volume = that.options.volume;
+            //sound.source.loop = that.options.loop;
+            sound.source.addEventListener('canplaythrough', canPlay)
+            sound.source.addEventListener('ended', onEnded);
+            //sound.source.addEventListener('waiting', onWaiting);
+            sound.source.addEventListener('timeupdate', onTimeUpdate);
+            sound.source.addEventListener('progress', onProgress);
+            sound.source.load();
+        }
+    }
+
+
+    function decodeAudio(arraybuffer) {
+        ctx.decodeAudioData(arraybuffer, function(buffer) {
+            sound.buffer = buffer;
+            canPlay();
+        });
+    }
+
+    function initSource() {
+        sound.source = ctx.createBufferSource();
+        sound.source.playbackRate.value = that.options.rate;
+        sound.source.buffer = sound.buffer;
+        sound.source.connect(masterGain);
+        sound.source.onended = onEnded;
+    }
+
+    function playSound() {
+        if (that._useWebAudio) {
+            if (!sound.isPlaying) {
+                initSource();
+                sound.source.start(0, sound._playbackTime);
+                sound._startTimestamp = Date.now();
+                sound.isPlaying = true;
+            }
+        } else {
+            sound.source.play();
+        }
+    }
+
+    function stopSound(isPause) {
+        if (that._useWebAudio) {
+            if (sound.isPlaying) {
+                sound.source.onended = null;
+                sound.source.stop(0);
+                sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                sound.isPlaying = false;
+            }
+        } else {
+            sound.source.pause();
+            if (!isPause) sound.source.currentTime = 0;
+        }
+    }
+
+    function pauseSound() {
+        stopSound(true);
+    }
+
+    function seek(time) {
+        if (sound.isPlaying) {
+            stopSound();
+            sound._playbackTime = time;
+            playSound();
+        } else {
+            sound._playbackTime = time;
+        }
+
+    }
+
+    function activeiOSAudio() {
+        var unlock = function() {
+            var buffer = ctx.createBuffer(1, 1, 22050);
+            var source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+
+            if (typeof source.start === 'undefined') {
+                source.noteOn(0);
+            } else {
+                source.start(0);
+            }
+
+            setTimeout(function() {
+                window.removeEventListener('touchend', unlock, false);
+                _iOSEnabled = true;
+                if (_playRequest) that.play();
+            }, 0);
+        }
+        window.addEventListener('touchend', unlock, false);
+    }
+
+    /********************************************************************************
+    // HANDLERS
+    /********************************************************************************/
+
+    function canPlay(e) {
+        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY, {}));
+    }
+
+    function onEnded(e) {
+        that.dispatchEvent(new Event(CanvasVideoEvent.ENDED, {}));
+        if (that.options.loop) {
+            stopSound();
+            playSound();
+        }
+    }
+
+    function onProgress(e) {
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+        /*
+        if(sound.source.buffered.length>0) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
+            if(perc>1) perc = 1;
+            else if(perc<0) perc = 0;
+            if(perc>=1 && that._waitFullyBuffer) {
+                that._waitFullyBuffer = false;
+                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
+                //console.log('sound playing');
+            } else {
+                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
+                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
+            }
+            that.bufferLengthPerc = perc;
+        }
+        */
+    }
+
+    /*
+        function onWaiting(e) {
+            console.log('Audio Buffer Waiting');
+            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+        }
+    */
+
+    function onTimeUpdate(e) {
+        /*
+        if (!that._useWebAudio) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
+                that._waitFullyBuffer = true;
+                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+            }
+        }
+        */
+    }
+
 
     /********************************************************************************
     // GETTER / SETTER
@@ -138,7 +344,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
         },
         set: function(value) {
             that.options.rate = value;
-            if(that._useWebAudio) {
+            if (that._useWebAudio) {
                 pauseSound();
                 playSound();
             } else {
@@ -151,209 +357,18 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     Object.defineProperty(that, 'bufferLength', {
         get: function() {
-            if(!_useWebAudio)
+            if(!that._useWebAudio)
             {
-                if(sound.source.buffered.length>0) {
-                    var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-                    return sound.source.buffered.end(currentTimeRange)-sound.source.currentTime;
-                } else {
-                    return 0;
-                }
+                var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+                var result = sound.source.buffered.length === 0 ? 0 : (sound.source.buffered.end(currentTimeRange) - sound.source.currentTime);
+                return result >= 0 ? result : 0;
+            } else {
+                // temp
+                return 1;
             }
         }
     });
 
-
-    /********************************************************************************
-    // PRIVATES
-    /********************************************************************************/
-
-
-    function webAudioConstructor(audiocontext) {
-        // Create audio context
-        if (audiocontext != null) {
-            ctx = audiocontext;
-        } else if (typeof AudioContext !== 'undefined') {
-            ctx = new AudioContext();
-        } else if (typeof webkitAudioContext !== 'undefined') {
-            ctx = new webkitAudioContext();
-        } else {
-            html5AudioConstructor ();
-            return;
-        }
-        // Create the master gain node
-        masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
-        masterGain.connect(ctx.destination);
-        //console.log('WebAudio API');
-    }
-
-    function html5AudioConstructor () {
-        that._useWebAudio = false;
-        sound.source = new Audio();
-        //console.log('HTML5 Audio');
-    }
-
-
-    function preload(src) {
-        if (that._useWebAudio) {
-            masterGain.gain.value = that.options.volume;
-            // check if src is an arraybuffer
-            if (that.options.arraybuffer != null) {
-                decodeAudio(that.options.arraybuffer);
-            } else {
-                // need to load.
-                xhr = new XMLHttpRequest();
-                xhr.open('get', src, true);
-                xhr.responseType = 'arraybuffer';
-                xhr.onload = function() {
-                    decodeAudio(xhr.response);
-                }
-                xhr.send();
-            }
-        } else {
-            sound.source.src = src;
-            sound.source.volume = that.options.volume;
-            //sound.source.loop = that.options.loop;
-            sound.source.addEventListener('canplaythrough', canPlay)
-            sound.source.addEventListener('ended', onEnded);
-            //sound.source.addEventListener('waiting', onWaiting);
-            sound.source.addEventListener('timeupdate', onTimeUpdate);
-            sound.source.addEventListener('progress', onProgress);
-            sound.source.load ();
-        }
-    }
-
-
-    function decodeAudio(arraybuffer) {
-        ctx.decodeAudioData(arraybuffer, function(buffer) {
-            sound.buffer = buffer;
-            canPlay();
-        });
-    }
-
-    function initSource() {
-        sound.source = ctx.createBufferSource();
-        sound.source.playbackRate.value = that.options.rate;
-        sound.source.buffer = sound.buffer;
-        sound.source.connect(masterGain);
-        sound.source.onended = onEnded;
-    }
-
-    function playSound() {
-        if (that._useWebAudio) {
-            if (!sound.isPlaying) {
-                initSource();
-                sound.source.start(0, sound._playbackTime);
-                sound._startTimestamp = Date.now();
-                sound.isPlaying = true;
-            }
-        } else {
-            sound.source.play();
-        }
-    }
-
-    function stopSound(isPause) {
-        if (that._useWebAudio) {
-            if (sound.isPlaying) {
-                sound.source.onended = null;
-                sound.source.stop(0);
-                sound._playbackTime = isPause ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
-                sound.isPlaying = false;
-            }
-        } else {
-            sound.source.pause();
-            if(!isPause) sound.source.currentTime = 0;
-        }
-    }
-
-    function pauseSound() {
-        stopSound(true);
-    }
-
-    function seek(time) {
-        if (sound.isPlaying) {
-            stopSound();
-            sound._playbackTime = time;
-            playSound();
-        } else {
-            sound._playbackTime = time;
-        }
-
-    }
-
-    function activeiOSAudio() {
-        var unlock = function() {
-            var buffer = ctx.createBuffer(1, 1, 22050);
-            var source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-
-            if (typeof source.start === 'undefined') {
-                source.noteOn(0);
-            } else {
-                source.start(0);
-            }
-
-            setTimeout(function() {
-                window.removeEventListener('touchend', unlock, false);
-                _iOSEnabled = true;
-                if (_playRequest) that.play();
-            }, 0);
-        }
-        window.addEventListener('touchend', unlock, false);
-    }
-
-    /********************************************************************************
-    // HANDLERS
-    /********************************************************************************/
-
-    function canPlay(e) {
-        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY, {}));
-    }
-
-    function onEnded(e) {
-        //console.log('ended');
-        that.dispatchEvent(new Event(CanvasVideoEvent.ENDED, {}));
-        if (that.options.loop) {
-            stopSound();
-            playSound();
-        }
-    }
-
-    function onProgress(e) {
-        if(sound.source.buffered.length>0) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
-            if(perc>1) perc = 1;
-            else if(perc<0) perc = 0;
-            if(perc>=1 && that._waitFullyBuffer) {
-                that._waitFullyBuffer = false;
-                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
-                //console.log('sound playing');
-            } else {
-                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
-                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
-            }
-            that.bufferLengthPerc = perc;
-        }
-    }
-
-/*
-    function onWaiting(e) {
-        console.log('Audio Buffer Waiting');
-        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
-    }
-*/
-
-    function onTimeUpdate(e) {
-        if (!that._useWebAudio) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
-                that._waitFullyBuffer = true;
-                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
-            }
-        }
-    }
 
 
     _constructor(audiocontext);
