@@ -97,26 +97,19 @@ function CanvasVideo(src, options) {
     this.play = function(forBuffering) {
         if (_built && _readyToPlay) {
             _lastTime = Date.now();
-            if (sound) {
-                _lastTime = sound.currentTime;
-                sound.play();
+            if(checkBufferStatus()) {
+                _isPlaying = true;
+                if (sound) {
+                    _lastTime = sound.currentTime;
+                    sound.play();
+                }
+                that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
+            } else {
+                _isPlaying = true;
+                _isBuffering = true;
+                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
             }
             if (!forBuffering) {
-                /*
-                if(checkBufferStatus()) {
-                    _isPlaying = true;
-                    that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
-                } else {
-                    _isPlaying = true;
-                    _isBuffering = true;
-                    that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-                }
-                */
-                _isPlaying = true;
-                that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
-
-
-
                 draw();
                 update();
             }
@@ -126,12 +119,13 @@ function CanvasVideo(src, options) {
         }
     }
 
+
     this.pause = function(forBuffering) {
         if (!forBuffering) {
             _isPlaying = false;
             _isBuffering = false;
+            that.dispatchEvent(new Event(CanvasVideoEvent.PAUSE));
         }
-        that.dispatchEvent(new Event(CanvasVideoEvent.PAUSE));
         if (sound) {
             sound.pause();
         }
@@ -158,6 +152,7 @@ function CanvasVideo(src, options) {
     /********************************************************************************/
 
     function update() {
+
         if (_isBuffering) checkBufferStatus();
         if (_isPlaying && !_isBuffering) {
 
@@ -229,6 +224,7 @@ function CanvasVideo(src, options) {
             that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
             that.dispatchEvent(new Event(CanvasVideoEvent.SEEKED));
             _seeking = false;
+            that.play(true);
         }
     }
 
@@ -245,11 +241,16 @@ function CanvasVideo(src, options) {
         }, 50);
 
         // gestion de l'audio.
-
         if (that.options.audio) {
             var buffer = null;
-            if (src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
-            sound.set(getAudioSrc(), {
+            var audioSrc;
+            if (src.arraybuffer && typeof that.options.audio != 'string') {
+                buffer = src.arraybuffer;
+                audioSrc = getAudioSrc(true); // no tag for blob
+            } else {
+                audioSrc = getAudioSrc(false);
+            }
+            sound.set(audioSrc, {
                 loop: that.options.loop,
                 volume: that.options.volume,
                 rate: that.options.playbackRate,
@@ -258,8 +259,6 @@ function CanvasVideo(src, options) {
             });
             sound.addEventListener(CanvasVideoEvent.CAN_PLAY, onAudioCanPlay);
             sound.addEventListener(CanvasVideoEvent.ENDED, audioEnded);
-            sound.addEventListener(CanvasVideoEvent.WAITING, audioWaiting);
-            sound.addEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
             sound.addEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
         }
         // else {
@@ -294,7 +293,7 @@ function CanvasVideo(src, options) {
                     perc: perc
                 }));
             }
-        }
+        };
         xhr.send();
     }
 
@@ -318,8 +317,7 @@ function CanvasVideo(src, options) {
 
         var bt = Utils.capBufferTime(video, that.options.bufferTime);
         var currentTimeRange = Utils.getCurrentTimeRange(video);
-
-        var audioBufferFull = that.options.audio ? (sound.bufferLength >= bt) : true;
+        var audioBufferFull = that.options.audio ? (sound.bufferLength >= bt) : true; // true if without audio.
 
         if (video.buffered.end(currentTimeRange) - video.currentTime >= bt && audioBufferFull) {
             if (_isBuffering) {
@@ -405,13 +403,14 @@ function CanvasVideo(src, options) {
         return o;
     }
 
-    function getAudioSrc() {
+    function getAudioSrc(useBlob) {
         var src;
         if (typeof that.options.audio === "boolean") {
             var sources = video.querySelectorAll('source');
             for (var i = 0; i <= sources.length - 1; i++) {
                 if (Utils.getAudioSupport(sources[i].type) || Utils.getAudioSupport('video/' + Utils.getExtension(sources[i].src)) || !sources[i].type) {
                     src = sources[i].src;
+                    if(!useBlob) src = src+"?audio="; // temp
                     break;
                 }
             }
@@ -448,7 +447,7 @@ function CanvasVideo(src, options) {
     }
 
     function onProgress(e) {
-        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+        if(!that.xhr) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
     }
 
     function audioEnded(e) {
@@ -471,15 +470,6 @@ function CanvasVideo(src, options) {
     function audioProgress(e) {
         that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
     }
-
-    function audioWaiting(e) {
-
-    }
-
-    function audioReadyAfterWaiting(e) {
-
-    }
-
 
     /********************************************************************************
     // GETTER / SETTER
@@ -544,6 +534,7 @@ function CanvasVideo(src, options) {
                 sound.currentTime = value;
                 video.currentTime = value;
                 _lastTime = sound.currentTime;
+                that.pause(true);
             } else {
                 video.currentTime = value;
             }

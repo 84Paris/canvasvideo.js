@@ -20,6 +20,8 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     var ctx, masterGain, xhr;
 
+    var _xhrLoaded = 0;
+
     var sound = {
         _startTimestamp: 0,
         _playbackTime: 0,
@@ -75,13 +77,13 @@ function AudioPlayer(audiocontext, audioBuffer) {
         pauseSound();
     }
 
-    this.needBuffering = function (nextCurrentTime, minBufferAllow) {
-        if(!that._useWebAudio) {
+    this.needBuffering = function(nextCurrentTime, minBufferAllow) {
+        if (!that._useWebAudio) {
             var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
             return ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, minBufferAllow) || Utils.getCurrentTimeRange(sound.source, nextCurrentTime) === false);
-        }
-        else {
-            return false; // temp
+        } else {
+            //return false; // temp
+            return _xhrLoaded>=1 ? false : true;
         }
 
     }
@@ -130,6 +132,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
             masterGain.gain.value = that.options.volume;
             // check if src is an arraybuffer
             if (that.options.arraybuffer != null) {
+                _xhrLoaded = 1;
                 decodeAudio(that.options.arraybuffer);
             } else {
                 // need to load.
@@ -138,17 +141,20 @@ function AudioPlayer(audiocontext, audioBuffer) {
                 xhr.responseType = 'arraybuffer';
                 xhr.onload = function() {
                     decodeAudio(xhr.response);
-                }
+                };
+                xhr.onprogress = function(oEvent) {
+                    if (oEvent.lengthComputable) {
+                        _xhrLoaded = oEvent.loaded / oEvent.total;
+                        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+                    }
+                };
                 xhr.send();
             }
         } else {
             sound.source.src = src;
             sound.source.volume = that.options.volume;
-            //sound.source.loop = that.options.loop;
             sound.source.addEventListener('canplaythrough', canPlay)
             sound.source.addEventListener('ended', onEnded);
-            //sound.source.addEventListener('waiting', onWaiting);
-            sound.source.addEventListener('timeupdate', onTimeUpdate);
             sound.source.addEventListener('progress', onProgress);
             sound.source.load();
         }
@@ -252,44 +258,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     function onProgress(e) {
         that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
-        /*
-        if(sound.source.buffered.length>0) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
-            if(perc>1) perc = 1;
-            else if(perc<0) perc = 0;
-            if(perc>=1 && that._waitFullyBuffer) {
-                that._waitFullyBuffer = false;
-                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
-                //console.log('sound playing');
-            } else {
-                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
-                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
-            }
-            that.bufferLengthPerc = perc;
-        }
-        */
     }
-
-    /*
-        function onWaiting(e) {
-            console.log('Audio Buffer Waiting');
-            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
-        }
-    */
-
-    function onTimeUpdate(e) {
-        /*
-        if (!that._useWebAudio) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
-                that._waitFullyBuffer = true;
-                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
-            }
-        }
-        */
-    }
-
 
     /********************************************************************************
     // GETTER / SETTER
@@ -301,7 +270,6 @@ function AudioPlayer(audiocontext, audioBuffer) {
         },
         set: function(value) {
             that.options.loop = value;
-            //if(!_useWebAudio) sound.source.loop = that.options.loop;
         }
     });
 
@@ -357,19 +325,16 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     Object.defineProperty(that, 'bufferLength', {
         get: function() {
-            if(!that._useWebAudio)
-            {
+            if (!that._useWebAudio) {
                 var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
                 var result = sound.source.buffered.length === 0 ? 0 : (sound.source.buffered.end(currentTimeRange) - sound.source.currentTime);
                 return result >= 0 ? result : 0;
             } else {
-                // temp
-                return 1;
+                //return sound.buffer ? (sound.buffer.duration - that.currentTime) : 0;
+                return _xhrLoaded*that.options.bufferTime;
             }
         }
     });
-
-
 
     _constructor(audiocontext);
 }
