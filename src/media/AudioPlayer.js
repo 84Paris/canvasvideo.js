@@ -117,13 +117,11 @@ function AudioPlayer(audiocontext, audioBuffer) {
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
         masterGain.connect(ctx.destination);
-        //console.log('WebAudio API');
     }
 
     function html5AudioConstructor() {
         that._useWebAudio = false;
         sound.source = new Audio();
-        //console.log('HTML5 Audio');
     }
 
 
@@ -170,8 +168,8 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     function initSource() {
         sound.source = ctx.createBufferSource();
-        sound.source.playbackRate.value = that.options.rate;
         sound.source.buffer = sound.buffer;
+        sound.source.playbackRate.value = that.options.rate;
         sound.source.connect(masterGain);
         sound.source.onended = onEnded;
     }
@@ -311,11 +309,12 @@ function AudioPlayer(audiocontext, audioBuffer) {
             return that.options.rate;
         },
         set: function(value) {
-            that.options.rate = value;
             if (that._useWebAudio) {
                 pauseSound();
+                that.options.rate = value;
                 playSound();
             } else {
+                that.options.rate = value;
                 sound.source.playbackRate = value;
             }
 
