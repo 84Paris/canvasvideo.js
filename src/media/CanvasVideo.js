@@ -170,7 +170,8 @@ function CanvasVideo(src, options) {
                 if (!that.options.audio) {
                     var currentTimeRange = Utils.getCurrentTimeRange(video);
                     var nextCurrentTime = (video.currentTime + (delta * that.options.playbackRate));
-                    if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false) && nextCurrentTime <= video.duration) {
+                    //if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false) && nextCurrentTime <= video.duration) {
+                    if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW)) && nextCurrentTime <= video.duration) {
                         _isBuffering = true;
                         that.pause(true);
                         that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
@@ -183,7 +184,8 @@ function CanvasVideo(src, options) {
 
                     var currentTimeRange = Utils.getCurrentTimeRange(video);
                     var nextCurrentTime = (video.currentTime + delta);
-                    var videoNeedBuffer = ((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false);
+                    //var videoNeedBuffer = ((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false);
+                    var videoNeedBuffer = (video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW);
                     var audioNeedBuffer = sound.needBuffering(nextCurrentTime, MIN_BUFFER_ALLOW);
 
                     if ((videoNeedBuffer || audioNeedBuffer) && nextCurrentTime <= video.duration) {
@@ -204,6 +206,7 @@ function CanvasVideo(src, options) {
                 if (!that.options.audio) that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
                 if (that.options.loop) {
                     if (!that.options.audio) {
+                        _isWaitPreloadBuffer = true;
                         video.currentTime = 0;
                     }
                 } else {
