@@ -1,7 +1,7 @@
 /**
  * AudioPlayer
  *
- * @class
+ * @class AudioPlayer
  * @author Jean-Vincent Roger - 84.Paris
  */
 
