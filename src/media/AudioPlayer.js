@@ -19,9 +19,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
     var that = this;
 
     var ctx, masterGain, xhr;
-
     var _xhrLoaded = 0;
-
     var sound = {
         _startTimestamp: 0,
         _playbackTime: 0,
@@ -90,9 +88,11 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     this.destroy = function() {
         stopSound();
-        sound.source.disconnect(0);
-        masterGain.disconnect(0);
-        masterGain = null;
+        if(that._useWebAudio) {
+            sound.source.disconnect(0);
+            masterGain.disconnect(0);
+            masterGain = null;
+        }
         sound = null;
     }
 
