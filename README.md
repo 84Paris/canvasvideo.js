@@ -213,7 +213,7 @@ var video = new CanvasVideo(src, options);
 
 Tested in the following browsers/OS:
 
-* Mobile iOS 8.0+
+* Mobile iOS 8.0+ 
 
 
 ### Known issues ###
