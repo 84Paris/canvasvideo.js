@@ -220,6 +220,11 @@ Tested in the following browsers/OS:
 
 * Doesn't work on Android devices.
 
+### Releases ###
+
+* [Releases archive](https://github.com/84Paris/canvasvideo.js/releases)
+
+
 
 ### License ###
 
