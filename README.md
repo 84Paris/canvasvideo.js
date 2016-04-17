@@ -10,10 +10,11 @@ This library draw video element on a canvas and sync it with the audio (from the
 
 * plays inline video file (mp4) with audio on iPhone (directly in the browser)
 * autoplays video without sound on iOS device (without touch event)
+* Manages Audio by the webaudio API (with HTML5 Audio fallback)
+* Auto unlock webaudio playback on the first touchend event.
 * supports xhr
 * supports playbackRate
 * similar methods/events to video DOM element
-* Manages Audio by the webaudio API (with HTML5 Audio fallback)
 
 ### Featured project ###
 
