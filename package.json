@@ -1,6 +1,6 @@
 {
   "name": "canvasvideo.js",
-  "version": "0.10.3",
+  "version": "1.0.0",
   "author": "Jean-Vincent Roger - jv.roger@84paris.com",
   "description": "canvasvideo.js is a lightweight library to play inline video with sound on iPhone (Safari).",
   "main": "src/media/CanvasVideo.js",
@@ -21,14 +21,17 @@
   "homepage": "https://github.com/84Paris/canvasvideo.js",
   "keywords": [
     "canvasvideo",
+    "canvas video",
     "inline video",
     "video",
     "canvas",
     "inline",
     "iphone",
+    "iphone inline video",
     "ios",
     "video ios",
     "video safari",
+    "video canvas",
     "browserify"
   ],
   "devDependencies": {
