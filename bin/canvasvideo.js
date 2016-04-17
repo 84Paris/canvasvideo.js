@@ -1,116 +1,106 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.CanvasVideo=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
- * Utils methods.
- *
- * @class
- * @author Jean-Vincent Roger - 84.Paris
- */
+ /**
+  * Utils methods.
+  *
+  * @class
+  * @author Jean-Vincent Roger - 84.Paris
+  */
 
-'use strict';
+ 'use strict';
 
-var Utils = {
+ var Utils = {
 
-    uid: function (){
-        var d = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = (d + Math.random()*16)%16 | 0;
-            d = Math.floor(d/16);
-            return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-        });
-        return uuid;
-    },
+     uid: function() {
+         var d = new Date().getTime();
+         var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+             var r = (d + Math.random() * 16) % 16 | 0;
+             d = Math.floor(d / 16);
+             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+         });
+         return uuid;
+     },
 
-    removeVideoElement: function (element)
-    {
-        var sources;
+     removeVideoElement: function(element) {
+         var sources;
 
-        if (element === null) {
-            return false;
-        }
+         if (element === null) {
+             return false;
+         }
 
-        // Remove <source> tags if any
-        sources = element.querySelectorAll('source');
-        for (var i = sources.length - 1; i >= 0; i--) {
-            element.removeChild(sources[i]);
-        }
+         // Remove <source> tags if any
+         sources = element.querySelectorAll('source');
+         for (var i = sources.length - 1; i >= 0; i--) {
+             element.removeChild(sources[i]);
+         }
 
-        // Remove attributes if any
-        element.src = '';
-        element.removeAttribute('src');
+         // Remove attributes if any
+         element.src = '';
+         element.removeAttribute('src');
 
-        // Properly unload video/audio
-        if (element.load instanceof Function) {
-            element.load();
-        }
+         // Properly unload video/audio
+         if (element.load instanceof Function) {
+             element.load();
+         }
 
-        // Remove element from DOM
-        if (element.parentNode instanceof HTMLElement) {
-            element.parentNode.removeChild(element);
-        }
+         // Remove element from DOM
+         if (element.parentNode instanceof HTMLElement) {
+             element.parentNode.removeChild(element);
+         }
 
-        return element;
-    },
+         return element;
+     },
 
-    getExtension: function ( filename )
-    {
-        var ext = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename)[0] : undefined;
-        if ( ext ) ext = ext.substring(0,3);
-        return ext;
-    },
+     getExtension: function(filename) {
+         var ext = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename)[0] : undefined;
+         if (ext) ext = ext.substring(0, 3);
+         return ext;
+     },
 
-    getAudioSupport : function ( type )
-    {
-        var audioTest = new Audio();
-        if ( !type )
-        {
-            var codecs = {
-              mp3: !!audioTest.canPlayType('audio/mpeg;').replace(/^no$/, ''),
-              opus: !!audioTest.canPlayType('audio/ogg; codecs="opus"').replace(/^no$/, ''),
-              ogg: !!audioTest.canPlayType('audio/ogg; codecs="vorbis"').replace(/^no$/, ''),
-              wav: !!audioTest.canPlayType('audio/wav; codecs="1"').replace(/^no$/, ''),
-              aac: !!audioTest.canPlayType('audio/aac;').replace(/^no$/, ''),
-              m4a: !!(audioTest.canPlayType('audio/x-m4a;') || audioTest.canPlayType('audio/m4a;') || audioTest.canPlayType('audio/aac;')).replace(/^no$/, ''),
-              mp4: !!(audioTest.canPlayType('audio/x-mp4;') || audioTest.canPlayType('audio/mp4;') || audioTest.canPlayType('audio/aac;')).replace(/^no$/, ''),
-              weba: !!audioTest.canPlayType('audio/webm; codecs="vorbis"').replace(/^no$/, '')
-            };
-            return codecs;
-        }
-        else
-        {
-            return !!audioTest.canPlayType( type ).replace(/^no$/, '');
-        }
+     getAudioSupport: function(type) {
+         var audioTest = new Audio();
+         if (!type) {
+             var codecs = {
+                 mp3: !!audioTest.canPlayType('audio/mpeg;').replace(/^no$/, ''),
+                 opus: !!audioTest.canPlayType('audio/ogg; codecs="opus"').replace(/^no$/, ''),
+                 ogg: !!audioTest.canPlayType('audio/ogg; codecs="vorbis"').replace(/^no$/, ''),
+                 wav: !!audioTest.canPlayType('audio/wav; codecs="1"').replace(/^no$/, ''),
+                 aac: !!audioTest.canPlayType('audio/aac;').replace(/^no$/, ''),
+                 m4a: !!(audioTest.canPlayType('audio/x-m4a;') || audioTest.canPlayType('audio/m4a;') || audioTest.canPlayType('audio/aac;')).replace(/^no$/, ''),
+                 mp4: !!(audioTest.canPlayType('audio/x-mp4;') || audioTest.canPlayType('audio/mp4;') || audioTest.canPlayType('audio/aac;')).replace(/^no$/, ''),
+                 weba: !!audioTest.canPlayType('audio/webm; codecs="vorbis"').replace(/^no$/, '')
+             };
+             return codecs;
+         } else {
+             return !!audioTest.canPlayType(type).replace(/^no$/, '');
+         }
 
-    },
+     },
 
-    isIOSdevice : /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false,
+     isIOSdevice: /iPhone|iPad|iPod/i.test(navigator.userAgent) ? true : false,
 
-    getCurrentTimeRange: function(media)
-    {
-        var i = media.buffered.length-1;
-        var result = i;
-        while(i>=0)
-        {
-            if (media.currentTime>media.buffered.start(i) && media.currentTime<media.buffered.end(i))
-            {
-                i = -1;
-            } else {
-                result = i;
-            }
-            i--;
-        }
-        return result;
-    },
+     getCurrentTimeRange: function(media, currentTime) {
+         var i = media.buffered.length - 1;
+         var result = false;
+         var mediaCurrentTime = currentTime != undefined ? currentTime : media.currentTime;
+         while (i >= 0) {
+             if (mediaCurrentTime >= media.buffered.start(i) && mediaCurrentTime <= media.buffered.end(i)) {
+                 result = i;
+                 i = -1;
+             }
+             i--;
+         }
+         return result;
+     },
 
-    capBufferTime : function (media, bufferTime)
-    {
-        if(media.currentTime+bufferTime>media.duration) return media.duration-media.currentTime;
-        else return bufferTime;
-    }
+     capBufferTime: function(media, bufferTime) {
+         if (media.currentTime + bufferTime > media.duration) return media.duration - media.currentTime;
+         else return bufferTime;
+     }
 
 
-}
+ }
 
-module.exports = Utils;
+ module.exports = Utils;
 
 },{}],2:[function(require,module,exports){
 /**
@@ -128,10 +118,15 @@ var CanvasVideoEvent = {
     CAN_PLAY: "canplay",
     CAN_PLAY_THROUGH: "canplaythrough",
     PLAYING: "playing",
+    PLAY: "play",
+    PAUSE: "pause",
     PROGRESS: "progress",
     READY: "ready",
     TIME_UPDATE: "timeupdate",
-    WAITING: "waiting"
+    WAITING: "waiting",
+    SEEKING: "seeking",
+    SEEKED: "seeked",
+    COMPLETE: "complete"
 }
 
 module.exports = CanvasVideoEvent;
@@ -261,7 +256,7 @@ module.exports = EventDispatcher;
 /**
  * AudioPlayer
  *
- * @class
+ * @class AudioPlayer
  * @author Jean-Vincent Roger - 84.Paris
  */
 
@@ -279,7 +274,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
     var that = this;
 
     var ctx, masterGain, xhr;
-
+    var _xhrLoaded = 0;
     var sound = {
         _startTimestamp: 0,
         _playbackTime: 0,
@@ -294,9 +289,8 @@ function AudioPlayer(audiocontext, audioBuffer) {
         _iOSEnabled = false,
         _playRequest = false;
 
-    that._useWebAudio = !audioBuffer;
-    that._waitFullyBuffer = false;
-    that.bufferLengthPerc = 0;
+
+    this._useWebAudio = !audioBuffer;
 
     function _constructor(audiocontext) {
         if (that._useWebAudio) webAudioConstructor(audiocontext);
@@ -308,7 +302,6 @@ function AudioPlayer(audiocontext, audioBuffer) {
     }
 
     this.set = function(src, options) {
-        // copy options
         for (var i in options) {
             that.options[i] = options[i];
         }
@@ -337,91 +330,26 @@ function AudioPlayer(audiocontext, audioBuffer) {
         pauseSound();
     }
 
-    this.destroy = function() {
-        stopSound();
-        sound.source.disconnect(0);
-        masterGain.disconnect(0);
-        masterGain = null;
-        sound = null;
+    this.needBuffering = function(nextCurrentTime, minBufferAllow) {
+        if (!that._useWebAudio) {
+            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+            return ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, minBufferAllow) || Utils.getCurrentTimeRange(sound.source, nextCurrentTime) === false);
+        } else {
+            //return false; // temp
+            return _xhrLoaded>=1 ? false : true;
+        }
+
     }
 
-    /********************************************************************************
-    // GETTER / SETTER
-    /********************************************************************************/
-
-    Object.defineProperty(that, 'loop', {
-        get: function() {
-            return that.options.loop;
-        },
-        set: function(value) {
-            that.options.loop = value;
-            //if(!_useWebAudio) sound.source.loop = that.options.loop;
+    this.destroy = function() {
+        stopSound();
+        if(that._useWebAudio) {
+            sound.source.disconnect(0);
+            masterGain.disconnect(0);
+            masterGain = null;
         }
-    });
-
-
-    Object.defineProperty(that, 'currentTime', {
-        get: function() {
-            if (that._useWebAudio) {
-                if (sound.isPlaying) {
-                    return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
-                } else {
-                    return sound._playbackTime;
-                }
-            } else {
-                return sound.source.currentTime;
-            }
-        },
-        set: function(value) {
-            if (that._useWebAudio) seek(value);
-            else sound.source.currentTime = value;
-        }
-    });
-
-
-    Object.defineProperty(that, 'volume', {
-        get: function() {
-            if (that._useWebAudio) return sound.source ? masterGain.gain.value : 1;
-            else return sound.source ? sound.source.volume : 1;
-        },
-        set: function(value) {
-            that.options.volume = value;
-            if (that._useWebAudio) masterGain.gain.value = value;
-            else sound.source.volume = value;
-        }
-    });
-
-
-    Object.defineProperty(that, 'playbackRate', {
-        get: function() {
-            return that.options.rate;
-        },
-        set: function(value) {
-            that.options.rate = value;
-            if(that._useWebAudio) {
-                pauseSound();
-                playSound();
-            } else {
-                sound.source.playbackRate = value;
-            }
-
-        }
-    });
-
-
-    Object.defineProperty(that, 'bufferLength', {
-        get: function() {
-            if(!_useWebAudio)
-            {
-                if(sound.source.buffered.length>0) {
-                    var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-                    return sound.source.buffered.end(currentTimeRange)-sound.source.currentTime;
-                } else {
-                    return 0;
-                }
-            }
-        }
-    });
+        sound = null;
+    }
 
 
     /********************************************************************************
@@ -438,19 +366,17 @@ function AudioPlayer(audiocontext, audioBuffer) {
         } else if (typeof webkitAudioContext !== 'undefined') {
             ctx = new webkitAudioContext();
         } else {
-            html5AudioConstructor ();
+            html5AudioConstructor();
             return;
         }
         // Create the master gain node
         masterGain = (typeof ctx.createGain === 'undefined') ? ctx.createGainNode() : ctx.createGain();
         masterGain.connect(ctx.destination);
-        //console.log('WebAudio API');
     }
 
-    function html5AudioConstructor () {
+    function html5AudioConstructor() {
         that._useWebAudio = false;
         sound.source = new Audio();
-        //console.log('HTML5 Audio');
     }
 
 
@@ -459,6 +385,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
             masterGain.gain.value = that.options.volume;
             // check if src is an arraybuffer
             if (that.options.arraybuffer != null) {
+                _xhrLoaded = 1;
                 decodeAudio(that.options.arraybuffer);
             } else {
                 // need to load.
@@ -467,19 +394,22 @@ function AudioPlayer(audiocontext, audioBuffer) {
                 xhr.responseType = 'arraybuffer';
                 xhr.onload = function() {
                     decodeAudio(xhr.response);
-                }
+                };
+                xhr.onprogress = function(oEvent) {
+                    if (oEvent.lengthComputable) {
+                        _xhrLoaded = oEvent.loaded / oEvent.total;
+                        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+                    }
+                };
                 xhr.send();
             }
         } else {
             sound.source.src = src;
             sound.source.volume = that.options.volume;
-            //sound.source.loop = that.options.loop;
             sound.source.addEventListener('canplaythrough', canPlay)
             sound.source.addEventListener('ended', onEnded);
-            //sound.source.addEventListener('waiting', onWaiting);
-            sound.source.addEventListener('timeupdate', onTimeUpdate);
             sound.source.addEventListener('progress', onProgress);
-            sound.source.load ();
+            sound.source.load();
         }
     }
 
@@ -493,8 +423,8 @@ function AudioPlayer(audiocontext, audioBuffer) {
 
     function initSource() {
         sound.source = ctx.createBufferSource();
-        sound.source.playbackRate.value = that.options.rate;
         sound.source.buffer = sound.buffer;
+        sound.source.playbackRate.value = that.options.rate;
         sound.source.connect(masterGain);
         sound.source.onended = onEnded;
     }
@@ -522,7 +452,7 @@ function AudioPlayer(audiocontext, audioBuffer) {
             }
         } else {
             sound.source.pause();
-            if(!isPause) sound.source.currentTime = 0;
+            if (!isPause) sound.source.currentTime = 0;
         }
     }
 
@@ -572,7 +502,6 @@ function AudioPlayer(audiocontext, audioBuffer) {
     }
 
     function onEnded(e) {
-        //console.log('ended');
         that.dispatchEvent(new Event(CanvasVideoEvent.ENDED, {}));
         if (that.options.loop) {
             stopSound();
@@ -581,40 +510,85 @@ function AudioPlayer(audiocontext, audioBuffer) {
     }
 
     function onProgress(e) {
-        if(sound.source.buffered.length>0) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            var perc = ((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime)/Utils.capBufferTime(sound.source, that.options.bufferTime));
-            if(perc>1) perc = 1;
-            else if(perc<0) perc = 0;
-            if(perc>=1 && that._waitFullyBuffer) {
-                that._waitFullyBuffer = false;
-                that.dispatchEvent(new Event(CanvasVideoEvent.READY, {}));
-                //console.log('sound playing');
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+    }
+
+    /********************************************************************************
+    // GETTER / SETTER
+    /********************************************************************************/
+
+    Object.defineProperty(that, 'loop', {
+        get: function() {
+            return that.options.loop;
+        },
+        set: function(value) {
+            that.options.loop = value;
+        }
+    });
+
+
+    Object.defineProperty(that, 'currentTime', {
+        get: function() {
+            if (that._useWebAudio) {
+                if (sound.isPlaying) {
+                    return sound.source ? that.options.rate * (Date.now() - sound._startTimestamp) / 1000 + sound._playbackTime : 0;
+                } else {
+                    return sound._playbackTime;
+                }
             } else {
-                if(that._waitFullyBuffer) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {perc:perc}))
-                //if(that._waitFullyBuffer) console.log((perc*100).toFixed(0)+"%");
+                return sound.source.currentTime;
             }
-            that.bufferLengthPerc = perc;
+        },
+        set: function(value) {
+            if (that._useWebAudio) seek(value);
+            else sound.source.currentTime = value;
         }
-    }
+    });
 
-/*
-    function onWaiting(e) {
-        console.log('Audio Buffer Waiting');
-        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
-    }
-*/
 
-    function onTimeUpdate(e) {
-        if (!that._useWebAudio) {
-            var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
-            if((sound.source.buffered.end(currentTimeRange) - sound.source.currentTime) < Utils.capBufferTime(sound.source, 2) && !that._waitFullyBuffer ) {
-                that._waitFullyBuffer = true;
-                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING, {}));
+    Object.defineProperty(that, 'volume', {
+        get: function() {
+            if (that._useWebAudio) return sound.source ? masterGain.gain.value : 1;
+            else return sound.source ? sound.source.volume : 1;
+        },
+        set: function(value) {
+            that.options.volume = value;
+            if (that._useWebAudio) masterGain.gain.value = value;
+            else sound.source.volume = value;
+        }
+    });
+
+
+    Object.defineProperty(that, 'playbackRate', {
+        get: function() {
+            return that.options.rate;
+        },
+        set: function(value) {
+            if (that._useWebAudio) {
+                pauseSound();
+                that.options.rate = value;
+                playSound();
+            } else {
+                that.options.rate = value;
+                sound.source.playbackRate = value;
+            }
+
+        }
+    });
+
+
+    Object.defineProperty(that, 'bufferLength', {
+        get: function() {
+            if (!that._useWebAudio) {
+                var currentTimeRange = Utils.getCurrentTimeRange(sound.source);
+                var result = sound.source.buffered.length === 0 ? 0 : (sound.source.buffered.end(currentTimeRange) - sound.source.currentTime);
+                return result >= 0 ? result : 0;
+            } else {
+                //return sound.buffer ? (sound.buffer.duration - that.currentTime) : 0;
+                return _xhrLoaded*that.options.bufferTime;
             }
         }
-    }
-
+    });
 
     _constructor(audiocontext);
 }
@@ -627,13 +601,12 @@ module.exports = AudioPlayer;
 /**
  * CanvasVideo
  *
- * @class
+ * @class CanvasVideo
  * @author Jean-Vincent Roger - 84.Paris
  */
 
 
 'use strict';
-
 
 
 var EventDispatcher = require('../event/EventDispatcher'),
@@ -643,32 +616,33 @@ var EventDispatcher = require('../event/EventDispatcher'),
     CanvasVideoEvent = require('../event/CanvasVideoEvent');
 
 
-
 function CanvasVideo(src, options) {
+
     EventDispatcher.call(this);
-
     var that = this;
-
-    var canvas, video, sound;
-    var _videoReady = false,
+    // main variables.
+    var canvas, ctx, video, sound;
+    // calcul variables.
+    var _lastTime,
+        _currentTime = 0,
+        _xhrLoaded = 0;
+    // status variables.
+    var _built = false,
+        _needTouchDevice,
+        _videoReady = false,
         _audioReady = false,
         _readyToPlay = false,
+        _seeking = false,
         _isPlaying = false,
-        _isWaitingFrame = false,
-        _alreadyDispatchWaiting = false,
-        _videoWaitFullyBuffer = false;
+        _isBuffering = false,
+        _isWaitPreloadBuffer = true;
+    // constants
+    var MIN_BUFFER_ALLOW = 1;
 
-    var lastTime, time, elapsed;
-    var currentTime = 0,
-        needTouchDevice;
-
-    var built = false;
-    var seeking = false;
-
-    this.options = {
+    that.options = {
         fps: 24,
-        loop: true,
-        xhr: false,
+        loop: false,
+        xhr: true,
         autoplay: false,
         volume: 1,
         playbackRate: 1,
@@ -676,11 +650,10 @@ function CanvasVideo(src, options) {
         bufferTime: 4
     };
 
-    this.src = src;
-
     function _constructor(src, options) {
-        needTouchDevice = Utils.isIOSdevice;
+        _needTouchDevice = Utils.isIOSdevice;
         // copy options
+        copyOptionsFromSRC(src);
         for (var i in options) {
             that.options[i] = options[i];
         }
@@ -688,71 +661,61 @@ function CanvasVideo(src, options) {
         if (that.options.audio) {
             sound = new AudioPlayer(that.options.audioContext, that.options.audioBuffer);
             // if audio driving, increase FPS for smouth
-            if (!options.fps) {
-                that.options.fps = 33;
-            }
+            if (!options.fps) that.options.fps = 33;
         }
 
-        if (options.canvas) that.element = options.canvas;
-        else that.element = document.createElement('canvas');
-        that.ctx = that.element.getContext('2d');
+        if (that.options.bufferTime < MIN_BUFFER_ALLOW) that.options.bufferTime = MIN_BUFFER_ALLOW;
 
-        if (that.options.width) that.element.width = that.options.width;
-        if (that.options.height) that.element.height = that.options.height;
+        if (options.canvas) canvas = options.canvas;
+        else canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d');
 
+        if (that.options.width) canvas.width = that.options.width;
+        if (that.options.height) canvas.height = that.options.height;
+
+        // if autopreload
         if (that.options.preload === true || that.options.autoplay === true) that.load();
     }
 
 
+    /********************************************************************************
+    // PUBLIC METHODS
+    /********************************************************************************/
+
+
     this.load = function() {
-        if (!built) {
+        if (!_built) {
             if (that.options.xhr) {
                 xhrPreload(src);
             } else {
                 build(src);
             }
+            that.dispatchEvent(new Event(CanvasVideoEvent.LOAD_START));
         }
     }
 
-    this.play = function(bufferInstruction) {
-        if (built && _readyToPlay) {
-            if(!bufferInstruction) _isPlaying = true;
-            lastTime = Date.now();
-            if (sound) {
-                lastTime = sound.currentTime;
-                sound.play();
-            }
-            draw();
-            calculate();
-            that.dispatchEvent(new Event('play'));
-        } else {
-            that.options.autoplay = true;
-            if (!built) this.load();
-        }
+    this.play = function() {
+        playCanvasVideo(false);
     }
 
-    this.pause = function(bufferInstruction) {
-        if(!bufferInstruction) _isPlaying = false;
-        that.dispatchEvent(new Event('pause'));
-        if (sound) {
-            sound.pause();
-        }
+
+    this.pause = function() {
+        pauseCanvasVideo(false);
     }
 
     this.destroy = function() {
         _isPlaying = false;
         if (sound) {
-            sound.removeEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
+            sound.removeEventListener(CanvasVideoEvent.CAN_PLAY, onAudioCanPlay);
             sound.removeEventListener(CanvasVideoEvent.ENDED, audioEnded);
-            sound.removeEventListener(CanvasVideoEvent.WAITING, audioWaiting);
-            sound.removeEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
             sound.removeEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
             sound.destroy();
             sound = null;
         }
+        _isWaitPreloadBuffer = true;
         Utils.removeVideoElement(video);
-        unbind();
-        that.ctx.clearRect(0, 0, video.width, video.height);
+        setEvents(false);
+        ctx.clearRect(0, 0, video.width, video.height);
         video = null;
     }
 
@@ -764,41 +727,481 @@ function CanvasVideo(src, options) {
     }
 
     /********************************************************************************
+    // PRIVATE METHODS
+    /********************************************************************************/
+
+    function playCanvasVideo(forBuffering) {
+        if (_built && _readyToPlay) {
+            _lastTime = Date.now();
+            if (checkBufferStatus(true)) {
+                _isPlaying = true;
+                _isBuffering = false;
+                if (sound) {
+                    _lastTime = sound.currentTime;
+                    sound.play();
+                }
+                that.dispatchEvent(new Event(CanvasVideoEvent.PLAY));
+            } else {
+                _isPlaying = true;
+                _isBuffering = true;
+                if(!_isWaitPreloadBuffer) {
+                    that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                }
+            }
+            if (!forBuffering) {
+                draw();
+                update();
+            }
+        } else {
+            that.options.autoplay = true;
+            if (!_built) this.load();
+        }
+    }
+
+
+    function pauseCanvasVideo(forBuffering) {
+        if (!forBuffering) {
+            _isPlaying = false;
+            _isBuffering = false;
+            that.dispatchEvent(new Event(CanvasVideoEvent.PAUSE));
+        }
+        if (sound) {
+            sound.pause();
+        }
+    }
+
+
+    function update() {
+
+        if (_isBuffering) checkBufferStatus();
+        if (_isPlaying && !_isBuffering) {
+
+            if (that.options.audio) {
+                var time = sound.currentTime;
+                var delta = (time - _lastTime);
+            } else {
+                var time = Date.now();
+                var delta = (time - _lastTime) / 1000;
+            }
+            if (delta >= ((1000 / that.options.fps) / 1000)) {
+                if (!that.options.audio) {
+                    if(video.buffered.length>0) {
+                        var currentTimeRange = Utils.getCurrentTimeRange(video);
+                        var nextCurrentTime = (video.currentTime + (delta * that.options.playbackRate));
+                        //if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false) && nextCurrentTime <= video.duration) {
+                        if (((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW)) && nextCurrentTime <= video.duration) {
+                            _isBuffering = true;
+                            pauseCanvasVideo(true);
+                            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                        } else {
+                            video.currentTime = nextCurrentTime;
+                            _lastTime = time;
+                        }
+                    }
+                } else {
+                    if(video.buffered.length>0) {
+                        var currentTimeRange = Utils.getCurrentTimeRange(video);
+                        var nextCurrentTime = (video.currentTime + delta);
+                        //var videoNeedBuffer = ((video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW) || Utils.getCurrentTimeRange(video, nextCurrentTime) === false);
+                        var videoNeedBuffer = (video.buffered.end(currentTimeRange) - video.currentTime) < Utils.capBufferTime(video, MIN_BUFFER_ALLOW);
+                        var audioNeedBuffer = sound.needBuffering(nextCurrentTime, MIN_BUFFER_ALLOW);
+
+                        if ((videoNeedBuffer || audioNeedBuffer) && nextCurrentTime <= video.duration) {
+                            _isBuffering = true;
+                            pauseCanvasVideo(true);
+                            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
+                        } else {
+                            video.currentTime = nextCurrentTime;
+                            _lastTime = video.currentTime;
+                        }
+                    }
+                }
+            }
+            // if we are at the end of the video stop
+            _currentTime = (Math.round(parseFloat(video.currentTime) * 10000) / 10000);
+            var duration = (Math.round(parseFloat(video.duration) * 10000) / 10000);
+            if (_currentTime >= duration) {
+                if (!that.options.audio) that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
+                if (that.options.loop) {
+                    if (!that.options.audio) {
+                        _isWaitPreloadBuffer = true;
+                        video.currentTime = 0;
+                    }
+                } else {
+                    _isPlaying = false;
+                    that.currentTime = 0;
+                    return;
+                }
+            }
+
+        }
+        requestAnimationFrame(update);
+    }
+
+    function draw() {
+        ctx.drawImage(video, 0, 0, video.width, video.height);
+        that.dispatchEvent(new Event(CanvasVideoEvent.TIME_UPDATE));
+        if (_seeking) {
+            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+            that.dispatchEvent(new Event(CanvasVideoEvent.SEEKED));
+            _seeking = false;
+            playCanvasVideo(true);
+        }
+    }
+
+    function build(src) {
+        _built = true;
+        video = createVideoElement(src);
+        setEvents(true);
+
+        if (!that.options.id) canvas.id = Utils.uid();
+        else canvas.id = that.options.id;
+
+        setTimeout(function() {
+            video.load();
+        }, 50);
+
+        // gestion de l'audio.
+        if (that.options.audio) {
+            var buffer = null;
+            var audioSrc;
+            if (src.arraybuffer && typeof that.options.audio != 'string') {
+                buffer = src.arraybuffer;
+                audioSrc = getAudioSrc(true); // no tag for blob
+            } else {
+                audioSrc = getAudioSrc(false);
+            }
+            sound.set(audioSrc, {
+                loop: that.options.loop,
+                volume: that.options.volume,
+                rate: that.options.playbackRate,
+                arraybuffer: buffer,
+                bufferTime: that.options.bufferTime
+            });
+            if(that.options.muted) that.muted = true;
+            sound.addEventListener(CanvasVideoEvent.CAN_PLAY, onAudioCanPlay);
+            sound.addEventListener(CanvasVideoEvent.ENDED, audioEnded);
+            sound.addEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
+        }
+    }
+
+
+    function xhrPreload(src) {
+        var videoInfos = getVideoInfos(src);
+        var url = videoInfos.src;
+        var mime = videoInfos.mime;
+        var xhr = new XMLHttpRequest();
+
+        xhr.open("GET", url, true);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = function(oEvent) {
+            var blob = URL.createObjectURL(new Blob([oEvent.target.response], {
+                type: mime
+            }));
+            build({
+                src: blob,
+                mime: mime,
+                arraybuffer: xhr.response
+            });
+            that.dispatchEvent(new Event(CanvasVideoEvent.COMPLETE));
+        };
+        xhr.onprogress = function(oEvent) {
+            if (oEvent.lengthComputable) {
+                _xhrLoaded = oEvent.loaded / oEvent.total;
+                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+            }
+        };
+        xhr.send();
+    }
+
+
+    function ready() {
+        _readyToPlay = true;
+        draw();
+        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+        if (that.options.autoplay) playCanvasVideo();
+    }
+
+
+    function checkBufferStatus(noAction) {
+        var bt = Utils.capBufferTime(video, that.options.bufferTime);
+        var currentTimeRange = Utils.getCurrentTimeRange(video);
+        var audioBufferFull = that.options.audio ? (sound.bufferLength >= bt) : true; // true if without audio.
+
+        if (video.buffered.length>0) {
+            if (video.buffered.end(currentTimeRange) - video.currentTime >= bt && audioBufferFull) {
+                if (_isBuffering && !noAction) {
+                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
+                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
+                    if (_isPlaying) that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
+                    _isBuffering = false;
+                    playCanvasVideo(true);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    function checkFirstPreloadBuffer() {
+        if(_isWaitPreloadBuffer) {
+            if (checkBufferStatus(true)) {
+                _isWaitPreloadBuffer = false;
+                that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY_THROUGH) );
+            }
+        }
+    }
+
+
+    function setEvents(listen) {
+        var method = listen === false ? 'removeEventListener' : 'addEventListener';
+        video[method]('timeupdate', draw);
+        video[method]('canplay', onVideoCanPlay);
+        video[method]('canplaythrough', onVideoCanPlay);
+        video[method]('progress', onProgress);
+    }
+
+
+    function createVideoElement(src) {
+        var v;
+        if (Array.isArray(src)) {
+            v = document.createElement('video');
+            for (var i = 0; i < src.length; ++i) {
+                if (typeof src[i] === 'string') {
+                    v.appendChild(createSourceElement(src[i]));
+                } else {
+                    var mime = src[i].mime ? src[i].mime : src[i].type;
+                    v.appendChild(createSourceElement(src[i].src, mime));
+                }
+            }
+        } else if (typeof src === 'string') {
+            v = document.createElement('video');
+            v.appendChild(createSourceElement(src));
+        } else if (typeof src === 'object' && src.nodeType != 1) {
+            v = document.createElement('video');
+            var mime = src.mime ? src.mime : src.type;
+            v.appendChild(createSourceElement(src.src, mime));
+        } else {
+            v = src;
+        }
+        return v;
+    }
+
+    // a fixer le setting du type mime (notamment pour les blobs qui n'ont pas d'extension)
+    function createSourceElement(src, mime) {
+        var s = document.createElement('source');
+        s.src = src;
+        var ext = Utils.getExtension(src);
+        if (ext || mime) s.type = mime ? mime : 'video/' + ext;
+        return s;
+    }
+
+    function getVideoInfos(src) {
+        var o = {};
+        if (Array.isArray(src)) {
+            if (typeof src[0] === 'string') {
+                o.src = src[0];
+            } else {
+                var mime = src[0].mime ? src[0].mime : src[0].type;
+                o.src = src[0].src;
+                o.mime = mime;
+            }
+        } else if (typeof src === 'string') {
+            o.src = src;
+        } else if (typeof src === 'object') {
+            if(src.nodeType != 1) {
+                var mime = src.mime ? src.mime : src.type;
+                o.src = src.src;
+                o.mime = mime;
+            }
+            else {
+                var sources = src.querySelectorAll('source');
+                if(sources.length>0) {
+                    var mime = sources[0].mime ? sources[0].mime : sources[0].type;
+                    o.src = sources[0].src;
+                    o.mime = mime;
+                } else {
+                    var mime = src.mime ? src.mime : src.type;
+                    o.src = src.src;
+                    o.mime = mime;
+                }
+            }
+        } else {
+            o = src;
+        }
+        o.mime = o.mime ? o.mime : "video/" + Utils.getExtension(o.src);
+        return o;
+    }
+
+    function getAudioSrc(useBlob) {
+        var src;
+        if (typeof that.options.audio === "boolean") {
+            var sources = video.querySelectorAll('source');
+            for (var i = 0; i <= sources.length - 1; i++) {
+                if (Utils.getAudioSupport(sources[i].type) || Utils.getAudioSupport('video/' + Utils.getExtension(sources[i].src)) || !sources[i].type) {
+                    src = sources[i].src;
+                    if (!useBlob) src = src + "?audio="; // temp
+                    break;
+                }
+            }
+        } else if (typeof that.options.audio === "string") {
+            src = that.options.audio;
+        }
+        return src;
+    }
+
+    function copyOptionsFromSRC(src) {
+        if(src.nodeType === 1) {
+            that.options.loop = src.loop;
+            that.options.autoplay = src.autoplay;
+            src.autoplay = false;
+            //that.options.muted = src.muted;
+            if (src.preload === "auto") that.options.preload = true;
+        }
+    }
+
+    /********************************************************************************
+    // HANDLERS
+    /********************************************************************************/
+
+    function onAudioCanPlay(e) {
+        if (!_audioReady) {
+            _audioReady = true;
+            if (_videoReady) ready();
+        }
+    }
+
+    function onVideoCanPlay(e) {
+        if (!_videoReady) {
+            if (!that.options.width) canvas.width = video.videoWidth;
+            if (!that.options.height) canvas.height = video.videoHeight;
+            video.width = canvas.width;
+            video.height = canvas.height;
+            _videoReady = true;
+            if (!that.options.audio) {
+                ready();
+            } else if (_audioReady) {
+                ready();
+            }
+        }
+    }
+
+    function onProgress(e) {
+        if (!that.xhr) that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+        checkFirstPreloadBuffer();
+    }
+
+    function audioEnded(e) {
+        that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
+        if (that.options.loop) {
+            _isPlaying = true;
+            sound.currentTime = 0;
+            video.currentTime = 0;
+            _lastTime = sound.currentTime;
+            that.currentTime = 0;
+        } else {
+            _isPlaying = false;
+            sound.currentTime = 0;
+            video.currentTime = 0;
+            _lastTime = sound.currentTime;
+            sound.pause();
+        }
+    }
+
+    function audioProgress(e) {
+        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS));
+        checkFirstPreloadBuffer();
+    }
+
+    /********************************************************************************
     // GETTER / SETTER
     /********************************************************************************/
 
 
-    Object.defineProperty(that, 'width', {
+    Object.defineProperty(that, 'autoplay', {
         get: function() {
-            return that.element.width;
+            return that.options.autoplay;
         },
         set: function(value) {
-            that.options.width = value;
-            that.element.width = value;
-            video.width = value;
+            that.options.autoplay = true;
         }
     });
 
-    Object.defineProperty(that, 'height', {
+    Object.defineProperty(that, 'bufferLength', {
         get: function() {
-            return that.element.height;
+            var result;
+            if(that.options.xhr) {
+                result = _xhrLoaded*that.options.bufferTime;
+            } else {
+                var currentTimeRange = Utils.getCurrentTimeRange(video);
+                result = video.buffered.length === 0 ? 0 : (video.buffered.end(currentTimeRange) - video.currentTime);
+                result = result >= 0 ? result : 0;
+            }
+
+            if (that.options.audio && sound && !(that.options.xhr && that.options.audio != 'string')) {
+                result = Math.min(result, sound.bufferLength);
+            }
+            return result;
+        }
+    });
+
+    Object.defineProperty(that, 'bufferTime', {
+        get: function() {
+            return video ? Utils.capBufferTime(video, that.options.bufferTime) : that.options.bufferTime;
         },
         set: function(value) {
-            that.options.height = value;
-            that.element.height = value;
-            video.height = value;
+            that.options.bufferTime = value >= MIN_BUFFER_ALLOW ? value : MIN_BUFFER_ALLOW;
+            if (sound) sound.options.bufferTime = that.options.bufferTime;
         }
     });
 
-    Object.defineProperty(that, 'videoWidth', {
+    Object.defineProperty(that, 'controls', {
         get: function() {
-            return video.videoWidth;
+            console.warn('controls attribute is not currently supported by CanvasVideo.');
+        },
+        set: function(value) {
+            console.warn('controls attribute is not currently supported by CanvasVideo.');
         }
     });
 
-    Object.defineProperty(that, 'videoHeight', {
+    Object.defineProperty(that, 'currentSrc', {
         get: function() {
-            return video.videoHeight;
+            return video.currentSrc;
+        }
+    });
+
+    Object.defineProperty(that, 'currentTime', {
+        get: function() {
+            return _currentTime;
+        },
+        set: function(value) {
+            _seeking = true;
+            that.dispatchEvent(new Event(CanvasVideoEvent.SEEKING));
+            if (sound) {
+                _isPlaying = true;
+                sound.currentTime = value;
+                video.currentTime = value;
+                _lastTime = sound.currentTime;
+                pauseCanvasVideo(true);
+            } else {
+                video.currentTime = value;
+            }
+        }
+    });
+
+    Object.defineProperty(that, 'duration', {
+        get: function() {
+            if (video) return video.duration;
+            else return NaN;
+        }
+    });
+
+    Object.defineProperty(that, 'element', {
+        get: function() {
+            return canvas;
         }
     });
 
@@ -811,23 +1214,33 @@ function CanvasVideo(src, options) {
         }
     });
 
+    Object.defineProperty(that, 'height', {
+        get: function() {
+            return canvas.height;
+        },
+        set: function(value) {
+            that.options.height = value;
+            canvas.height = value;
+            video.height = value;
+        }
+    });
+
+    Object.defineProperty(that, 'id', {
+        get: function() {
+            return canvas.id;
+        },
+        set: function(value) {
+            canvas.id = value;
+        }
+    });
+
     Object.defineProperty(that, 'loop', {
         get: function() {
             return that.options.loop;
         },
         set: function(value) {
-            if(sound) sound.loop = value;
+            if (sound) sound.loop = value;
             that.options.loop = value;
-        }
-    });
-
-    Object.defineProperty(that, 'volume', {
-        get: function() {
-            return that.options.volume;
-        },
-        set: function(value) {
-            that.options.volume = value;
-            if (sound) sound.volume = value;
         }
     });
 
@@ -847,38 +1260,13 @@ function CanvasVideo(src, options) {
 
     Object.defineProperty(that, 'needTouchDevice', {
         get: function() {
-            return needTouchDevice;
+            return _needTouchDevice;
         }
     });
 
-    // A affiner.
-    Object.defineProperty(that, 'currentTime', {
+    Object.defineProperty(that, 'paused', {
         get: function() {
-            return currentTime;
-        },
-        set: function(value) {
-            seeking = true;
-            if (sound) {
-                _isPlaying = true;
-                sound.currentTime = value;
-                video.currentTime = value;
-                lastTime = sound.currentTime;
-            } else {
-                video.currentTime = value;
-            }
-        }
-    });
-
-    Object.defineProperty(that, 'duration', {
-        get: function() {
-            if (video) return video.duration;
-            else return NaN;
-        }
-    });
-
-    Object.defineProperty(that, 'seeking', {
-        get: function() {
-            return seeking;
+            return !_isPlaying;
         }
     });
 
@@ -887,11 +1275,8 @@ function CanvasVideo(src, options) {
             return that.options.playbackRate;
         },
         set: function(value) {
-            //if ( video ) video.playbackRate = value;
             that.options.playbackRate = value;
-            if (that.options.audio) {
-                if (sound) sound.playbackRate = value;
-            }
+            if (that.options.audio && sound) sound.playbackRate = value;
         }
     });
 
@@ -901,468 +1286,57 @@ function CanvasVideo(src, options) {
         }
     });
 
-    Object.defineProperty(that, 'controls', {
+    Object.defineProperty(that, 'seeking', {
         get: function() {
-            console.warn('controls attribute is not currently supported by CanvasVideo.');
+            return _seeking;
+        }
+    });
+
+    // TODO
+    Object.defineProperty(that, 'src', {
+        get: function() {
+            return src;
+        }
+    });
+
+    Object.defineProperty(that, 'videoHeight', {
+        get: function() {
+            return video.videoHeight;
+        }
+    });
+
+    Object.defineProperty(that, 'videoWidth', {
+        get: function() {
+            return video.videoWidth;
+        }
+    });
+
+    Object.defineProperty(that, 'volume', {
+        get: function() {
+            return that.options.volume;
         },
         set: function(value) {
-            console.warn('controls attribute is not currently supported by CanvasVideo.');
+            that.options.volume = value;
+            if (sound) sound.volume = value;
         }
     });
 
-
-    Object.defineProperty(that, 'autoplay', {
+    Object.defineProperty(that, 'width', {
         get: function() {
-            return that.options.autoplay;
+            return canvas.width;
         },
         set: function(value) {
-            that.options.autoplay = true;
+            that.options.width = value;
+            canvas.width = value;
+            video.width = value;
         }
     });
 
-
-    Object.defineProperty(that, 'currentSrc', {
+    Object.defineProperty(that, 'xhr', {
         get: function() {
-            return video.currentSrc;
+            return that.options.xhr;
         }
     });
-
-
-    Object.defineProperty(that, 'bufferTime', {
-        get: function() {
-            return that.options.bufferTime;
-        },
-        set: function(value) {
-            that.options.bufferTime = value;
-            if(sound) sound.options.bufferTime = value;
-        }
-    });
-
-
-    Object.defineProperty(that, 'bufferLength', {
-        get: function() {
-            if(video.buffered.length>0) {
-                var currentTimeRange = Utils.getCurrentTimeRange(video);
-                //console.log(video.buffered);
-                //console.log(currentTimeRange + ' : '+video.buffered.end(currentTimeRange)+" - "+video.currentTime+"/"+sound.currentTime+"/"+video.duration);
-                return video.buffered.end(currentTimeRange)-video.currentTime;
-            } else {
-                return 0;
-            }
-
-        }
-    });
-
-
-    /********************************************************************************
-    // PRIVATES
-    /********************************************************************************/
-
-
-
-    function calculate() {
-        // ------------------------------------------------------------------------------------
-
-        if (_alreadyDispatchWaiting && !that.options.audio)
-        {
-            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-            var currentTimeRange = Utils.getCurrentTimeRange(video);
-            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt)
-            {
-                _alreadyDispatchWaiting = false;
-                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-                that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-                that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-                lastTime = Date.now();
-                if(_isPlaying) that.play(true);
-            } else {
-                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-                if(perc<0) perc = 0;
-                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
-            }
-        }
-        // ------------------------------------------------------------------------------------
-        if (_alreadyDispatchWaiting && that.options.audio)
-        {
-            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-            var currentTimeRange = Utils.getCurrentTimeRange(video);
-            if(video.buffered.end(currentTimeRange) - video.currentTime>=bt || bt === 0)
-            {
-                _videoWaitFullyBuffer = false;
-                if(!sound._waitFullyBuffer) {
-                    _alreadyDispatchWaiting = false;
-                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-                    that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-                    that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-                    lastTime = sound.currentTime;
-                    if(_isPlaying) that.play(true);
-                }
-
-            } else {
-                _videoWaitFullyBuffer = true;
-                var perc = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-                if(perc<0) perc = 0;
-                //console.log(((perc/2)+(sound.bufferLengthPerc/2)));
-                //console.log ( video.currentTime );
-                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (perc/2)+(sound.bufferLengthPerc/2) }));
-            }
-        }
-        // ------------------------------------------------------------------------------------
-
-        if (_isPlaying && !_alreadyDispatchWaiting) {
-            if (that.options.audio) {
-                var time = sound.currentTime;
-                var elapsed = (time - lastTime);
-            } else {
-                var time = Date.now();
-                var elapsed = (time - lastTime) / 1000;
-            }
-
-            if (elapsed >= ((1000 / that.options.fps) / 1000)) {
-                if (!that.options.audio) {
-                    if (!_isWaitingFrame) {
-                        video.currentTime = (video.currentTime + (elapsed * that.options.playbackRate));
-                        lastTime = time;
-                        _isWaitingFrame = true;
-                    } else if (!_alreadyDispatchWaiting) {
-                        that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-                        that.pause(true);
-                        _alreadyDispatchWaiting = true;
-                    }
-
-                } else {
-                    if(sound._useWebAudio) {
-                        video.currentTime = (video.currentTime + elapsed);
-                        lastTime = video.currentTime;
-                    } else {
-                        if (!_isWaitingFrame) {
-                            video.currentTime = (Number(sound.currentTime.toFixed(2)) + elapsed);
-                            lastTime = Number(sound.currentTime.toFixed(2));
-                            _isWaitingFrame = true;
-                        } else if (!_alreadyDispatchWaiting) {
-                            var bt = Utils.capBufferTime(video, that.options.bufferTime);
-                            var currentTimeRange = Utils.getCurrentTimeRange(video);
-                            lastTime = Number(Number(sound.currentTime.toFixed(2)));
-                            if((video.buffered.end(currentTimeRange) - video.currentTime)/bt>Utils.capBufferTime(video, .3)) { // dirty hack
-                                that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-                                that.pause(true);
-                                _alreadyDispatchWaiting = true;
-                            }
-                        }
-                    }
-                }
-            }
-            // if we are at the end of the video stop
-            currentTime = (Math.round(parseFloat(video.currentTime) * 10000) / 10000);
-            var duration = (Math.round(parseFloat(video.duration) * 10000) / 10000);
-            if (currentTime >= duration) {
-                //console.log('currentTime: ' + currentTime + ' duration: ' + video.duration);
-                if (!that.options.audio) that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
-                if (that.options.loop) {
-                    if (!that.options.audio) {
-                        video.currentTime = 0;
-                    }
-                } else {
-                    _isPlaying = false;
-                    that.currentTime = 0;
-                    return;
-                }
-
-            }
-            //requestAnimationFrame(calculate);
-        }
-        requestAnimationFrame(calculate);
-    }
-
-    function draw() {
-
-        //if (!that.options.audio) {
-            if(!_alreadyDispatchWaiting) {
-                _isWaitingFrame = false;
-                _alreadyDispatchWaiting = false;
-            }
-
-        //}
-        that.ctx.drawImage(video, 0, 0, video.width, video.height);
-        that.dispatchEvent(new Event('timeupdate'));
-        if (seeking) {
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-            seeking = false;
-        }
-    }
-
-    function bothReady() {
-        _readyToPlay = true;
-
-        if (!that.options.width) that.element.width = video.videoWidth;
-        if (!that.options.height) that.element.height = video.videoHeight;
-
-        video.width = that.element.width;
-        video.height = that.element.height;
-
-        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-        that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-        that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-        if (that.options.autoplay) that.play();
-    }
-
-    function build(src) {
-        built = true;
-        // create video element
-        video = createVideoElement(src);
-        bind();
-        if (!that.options.id) that.id = video.id ? video.id : Utils.uid();
-        else that.id = that.options.id;
-        video.id = that.id;
-
-        setTimeout(function() {
-            video.load();
-        }, 50);
-        // gestion de l'audio.
-        if (that.options.audio) {
-            var buffer = null;
-            if (src.arraybuffer && typeof that.options.audio != 'string') buffer = src.arraybuffer;
-            sound.set(getAudioSrc(), {
-                loop: that.options.loop,
-                volume: that.options.volume,
-                rate: that.options.playbackRate,
-                arraybuffer: buffer,
-                bufferTime: that.options.bufferTime
-            });
-            sound.addEventListener(CanvasVideoEvent.CAN_PLAY, audioCanPlay);
-            sound.addEventListener(CanvasVideoEvent.ENDED, audioEnded);
-            sound.addEventListener(CanvasVideoEvent.WAITING, audioWaiting);
-            sound.addEventListener(CanvasVideoEvent.READY, audioReadyAfterWaiting);
-            sound.addEventListener(CanvasVideoEvent.PROGRESS, audioProgress);
-        } else {
-            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY_THROUGH), {});
-            that.dispatchEvent( new Event(CanvasVideoEvent.CAN_PLAY), {});
-        }
-    }
-
-
-    // traitement url
-    function xhrPreload(src) {
-        var videoInfos = getVideoInfos(src);
-        var url = videoInfos.src;
-        var mime = videoInfos.mime;
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, true);
-        //xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-        xhr.responseType = "arraybuffer";
-
-        xhr.onload = function(oEvent) {
-            var blob = URL.createObjectURL(new Blob([oEvent.target.response], {
-                type: mime
-            }));
-            build({
-                src: blob,
-                mime: mime,
-                arraybuffer: xhr.response
-            });
-        };
-
-        xhr.onprogress = function(oEvent) {
-            if (oEvent.lengthComputable) {
-                var perc = oEvent.loaded / oEvent.total;
-                that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, {
-                    perc: perc
-                }));
-                // do something with this
-            }
-        }
-
-        xhr.send();
-    }
-
-    function bind() {
-        video.addEventListener('timeupdate', draw);
-        video.addEventListener('canplay', videoCanPlay);
-        video.addEventListener('canplaythrough', videoCanPlay);
-        video.addEventListener('waiting', onWaiting);
-        video.addEventListener('progress', onProgress);
-
-        //video.addEventListener ( 'volumechange', function(e){} );
-        //video.addEventListener ( 'loadstart', function(e){} );
-    }
-
-    function unbind() {
-        video.removeEventListener('timeupdate', draw);
-        video.removeEventListener('canplay', videoCanPlay);
-        video.removeEventListener('canplaythrough', videoCanPlay);
-        video.removeEventListener('waiting', onWaiting);
-        video.removeEventListener('progress', onProgress);
-    }
-
-
-    function createVideoElement(src) {
-        var v;
-        if (Array.isArray(src)) {
-            v = document.createElement('video');
-            for (var i = 0; i < src.length; ++i) {
-                if (typeof src[i] === 'string') {
-                    v.appendChild(createSourceElement(src[i]));
-                } else {
-                    var mime = src[i].mime ? src[i].mime : src[i].type;
-                    v.appendChild(createSourceElement(src[i].src, mime));
-                }
-            }
-        } else if (typeof src === 'string') {
-            v = document.createElement('video');
-            v.appendChild(createSourceElement(src));
-        } else if (typeof src === 'object') {
-            v = document.createElement('video');
-            var mime = src.mime ? src.mime : src.type;
-            v.appendChild(createSourceElement(src.src, mime));
-        } else {
-            v = src;
-        }
-        return v;
-    }
-
-    // a fixer le setting du type mime (notamment pour les blobs qui n'ont pas d'extension)
-    function createSourceElement(src, mime) {
-        var s = document.createElement('source');
-        s.src = src;
-        var ext = Utils.getExtension(src);
-        if (ext || mime) s.type = mime ? mime : 'video/' + ext;
-        return s;
-    }
-
-
-
-    function getAudioSrc() {
-        var src;
-        if (typeof options.audio === "boolean") {
-            var sources = video.querySelectorAll('source');
-            for (var i = 0; i <= sources.length - 1; i++) {
-                if (Utils.getAudioSupport(sources[i].type) || Utils.getAudioSupport('video/' + Utils.getExtension(sources[i].src)) || !sources[i].type) {
-                    src = sources[i].src;
-                    break;
-                }
-            }
-        } else if (typeof options.audio === "string") {
-            src = options.audio;
-        }
-        return src;
-    }
-
-
-    function getVideoInfos(src) {
-        var o = {};
-        if (Array.isArray(src)) {
-            if (typeof src[0] === 'string') {
-                o.src = src[0];
-            } else {
-                var mime = src[0].mime ? src[0].mime : src[0].type;
-                o.src = src[0].src;
-                o.mime = mime;
-            }
-        } else if (typeof src === 'string') {
-            o.src = src;
-        } else if (typeof src === 'object') {
-            var mime = src.mime ? src.mime : src.type;
-            o.src = src.src;
-            o.mime = mime;
-        } else {
-            o = src;
-        }
-
-        o.mime = o.mime ? o.mime : "video/" + Utils.getExtension(o.src);
-        return o;
-    }
-
-
-    /********************************************************************************
-    // HANDLERS
-    /********************************************************************************/
-
-    function videoCanPlay(e) {
-        if (!_videoReady) {
-            _videoReady = true;
-            if (!that.options.audio) {
-                bothReady();
-            }
-            /*else if ( that.options.audio && that.needTouchDevice  )
-            {
-                _audioReady = true;
-                bothReady ();
-            }*/
-            else if (_audioReady) {
-                bothReady();
-            }
-        }
-    }
-
-    function audioCanPlay(e) {
-        if (!_audioReady) {
-            _audioReady = true;
-            if (_videoReady) bothReady();
-        }
-    }
-
-
-    function onWaiting(e) {
-        //console.log('Video Waiting');
-    }
-
-    function onProgress(e) {
-        //console.log("progress");
-    }
-
-    function audioEnded(e) {
-        that.dispatchEvent(new Event(CanvasVideoEvent.ENDED));
-        if (that.options.loop) {
-            _isPlaying = true;
-            _isWaitingFrame = false;
-            _alreadyDispatchWaiting = false;
-            sound.currentTime = 0;
-            video.currentTime = 0;
-            //lastTime = sound.currentTime;
-            //that.currentTime = 0;
-        } else {
-            _isPlaying = false;
-            sound.currentTime = 0;
-            video.currentTime = 0;
-            lastTime = sound.currentTime;
-            sound.pause();
-        }
-    }
-
-
-    function audioProgress(e) {
-        var bt = Utils.capBufferTime(video, that.options.bufferTime);
-        var currentTimeRange = Utils.getCurrentTimeRange(video);
-        var percVideo = (video.buffered.end(currentTimeRange) - video.currentTime)/bt;
-        if(percVideo<0) percVideo = 0;
-        that.dispatchEvent(new Event(CanvasVideoEvent.PROGRESS, { perc: (e.datas.perc/2)+(percVideo/2) }));
-    }
-
-
-    function audioWaiting(e) {
-        /*
-        if(!_alreadyDispatchWaiting) {
-            that.dispatchEvent(new Event(CanvasVideoEvent.WAITING));
-            that.pause(true);
-            _alreadyDispatchWaiting = true;
-        }
-        */
-    }
-
-    function audioReadyAfterWaiting(e) {
-        //console.log('audio ready');
-        if(!_videoWaitFullyBuffer) {
-            _alreadyDispatchWaiting = false;
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY_THROUGH));
-            that.dispatchEvent(new Event(CanvasVideoEvent.CAN_PLAY));
-            that.dispatchEvent(new Event(CanvasVideoEvent.PLAYING));
-            lastTime = Number(sound.currentTime.toFixed(2));
-            if(_isPlaying) that.play(true);
-        }
-    }
-
-
 
     _constructor(src, options);
 }

@@ -10,9 +10,11 @@ This library draw video element on a canvas and sync it with the audio (from the
 
 * plays inline video file (mp4) with audio on iPhone (directly in the browser)
 * autoplays video without sound on iOS device (without touch event)
-* supports xhr
-* similar methods/events to video DOM element
 * Manages Audio by the webaudio API (with HTML5 Audio fallback)
+* Auto unlock webaudio playback on the first touchend event.
+* supports xhr
+* supports playbackRate
+* similar methods/events to video DOM element
 
 ### Featured project ###
 
@@ -40,7 +42,7 @@ or with a classic script tag.
 ### Basic usage example  ###
 
 ```js
-var video = new CanvasVideo('./videos/file.mp4', {audio:true, xhr:true});
+var video = new CanvasVideo('./videos/file.mp4', {audio:true, xhr:true, audioBuffer:false});
 video.addEventListener('canplaythrough', onLoaded);
 video.load();
 
@@ -61,6 +63,8 @@ function playVideo()
 
 ```js
 var options = {
+    xhr: false,
+    bufferTime: 6,
     audio: false,
     preload: true,
     autoplay: true
@@ -73,9 +77,10 @@ document.body.appendChild(video.element);
 
 ```js
 var options = {
+    xhr: false,
+    audioBuffer: true,
     audio: './sound/file.mp3',
-    loop: true,
-    audioBuffer: true
+    loop: true
 }
 var video = new CanvasVideo('./videos/file.mp4', options);
 video.addEventListener('canplaythrough', onLoaded);
@@ -106,7 +111,7 @@ function playVideo()
     if (navigator.userAgent.toLowerCase().indexOf('iphone') >= 0)
     {
         document.body.removeChild(video);
-        video = new CanvasVideo(video, {xhr:true});
+        video = new CanvasVideo(video, {xhr:true, audioBuffer:false});
         document.body.appendChild(video.element);
     }
     video.addEventListener('canplaythrough', onLoaded);
@@ -138,7 +143,7 @@ var video = new CanvasVideo(src, options);
     * **audio:** This parameter could be:
         * `Boolean` *(default: `false`)* Set to `true` to play audio channel of the video file.
         * `String` url of an audio file.
-	* **audioBuffer:** `Boolean` *(default: `false`)* Set to true to force HTML5 Audio (the audio file could be play without to be fully preload).
+	* **audioBuffer:** `Boolean` *(default: `false`)* Set to false to use the webaudio API (fully preload audio file) or set to true to force HTML5 Audio (the audio file could be play without to be fully preload).
 	* **audioContext:** `AudioContext` *(optional)* the AudioContext to use.
     * **autoplay:** `Boolean` *(default: `false`)* Set to true to start playing when it is loaded.
     * **bufferTime:** `Number` *(default: `4.0`)* The number of seconds assigned to the buffer (only use if you don't use xhr).
@@ -148,7 +153,7 @@ var video = new CanvasVideo(src, options);
 	* **playbackRate:** `Number` *(default: `1.0`)* Set the default speed of the audio/video playback.
     * **preload:** `Boolean` *(default: `false`)* Set to true to automatically load when canvasvideo is create.
     * **volume:** `Number` *(default: `1.0`)* Set the default volume of the audio.
-    * **xhr:** `Boolean` *(default: `false`)* Set to true to fully preload video/audio file(s).
+    * **xhr:** `Boolean` *(default: `true`)* Set to true to fully preload video/audio file(s).
         * Recommanded if `audio:true` to not preload the video file twice (as video element and as audio element).
 
 
@@ -163,18 +168,24 @@ var video = new CanvasVideo(src, options);
 
 ### Properties ###
 
+* **autoplay:** `Boolean` Get/set if the video should start playing as soon as it is loaded.
 * **bufferLength:** `Number` Get the number of seconds of data currently in the buffer.
 * **bufferTime:** `Number` Get/set the number of seconds assigned to the buffer.
+* **currentSrc:** `String` Get the URL of the current video.
 * **currentTime:** `Number` Get/set the current time of the canvasvideo.
-* **element:** `<canvas>` Returns the canvas element use as canvasvideo.
 * **duration:** `Number` Returns the length of the current audio/video (in seconds).
-* **fps:** `Number` Get the FPS.
+* **element:** `<canvas>` Returns the canvas element use as canvasvideo.
+* **fps:** `Number` Get the video framerate.
 * **height:** `Number` Get/set the canvasvideo height.
+* **id:** `String` Get/set canvas element id.
 * **loop:** `Boolean` Get/set the loop parameter.
 * **muted:** `Boolean` Sets or returns whether the video/audio is muted or not.
+* **needTouchDevice:** `Boolean` returns if the device require a touchend event to start playing.
+* **paused:** `Boolean` Returns whether the audio/video is paused or not.
 * **playbackRate:** `Number` Sets or returns the speed of the audio/video playback.
 * **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
 * **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
+* **src:** `String/Object/Array/<video>` Returns the src of the canvasvideo.
 * **videoHeight:** `Number` Get the original video height.
 * **videoWidth:** `Number` Get the original video width.
 * **volume:** `Number` Get/set the video audio volume.
@@ -184,11 +195,16 @@ var video = new CanvasVideo(src, options);
 
 ### Events ###
 
-* **canplaythrough/canplay:** Fires when the browser can play through the video/audio without stopping for buffering.
+* **canplay:** Fires when the browser can start playing the video
+* **canplaythrough:** Fires when the buffer is full.
 * **ended:** Fires when the current playlist is ended.
+* **loadstart** Fires when the browser has loaded the current frame of the audio/video.
+* **pause:** Fires when the audio/video has been paused.
 * **play:** Fires when the audio/video has been started or is no longer paused.
 * **playing:** Fires when the audio/video is playing after having been paused or stopped for buffering.
 * **progress:** Fires when the browser is downloading the audio/video.
+* **seeked:** Fires when the user is finished moving/skipping to a new position in the audio/video.
+* **seeking:** Fires when the user starts moving/skipping to a new position in the audio/video.
 * **timeupdate:** Fires when the current playback position has changed.
 * **waiting:** Fires when the video stops because it needs to buffer the next frame.
 
@@ -198,6 +214,11 @@ var video = new CanvasVideo(src, options);
 Tested in the following browsers/OS:
 
 * Mobile iOS 8.0+
+
+
+### Known issues ###
+
+* Doesn't work on Android devices.
 
 
 ### License ###
