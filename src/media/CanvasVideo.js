@@ -620,8 +620,8 @@ function CanvasVideo(src, options) {
         },
         set: function(value) {
             that.options.height = value;
-            canvas.height = value;
-            video.height = value;
+            if(canvas) canvas.height = value;
+            if(video) video.height = value;
         }
     });
 
@@ -660,7 +660,13 @@ function CanvasVideo(src, options) {
 
     Object.defineProperty(that, 'needTouchDevice', {
         get: function() {
-            return _needTouchDevice;
+            var retour = false;
+            if(_needTouchDevice) {
+                if(that.options.audio && sound) retour = sound.iOSEnabled;
+                else if(that.options.audio) retour = true;
+                else retour = false;
+            }
+            return retour;
         }
     });
 
@@ -727,8 +733,8 @@ function CanvasVideo(src, options) {
         },
         set: function(value) {
             that.options.width = value;
-            canvas.width = value;
-            video.width = value;
+            if(canvas) canvas.width = value;
+            if(video) video.width = value;
         }
     });
 
