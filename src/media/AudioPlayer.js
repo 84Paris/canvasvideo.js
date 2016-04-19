@@ -335,6 +335,17 @@ function AudioPlayer(audiocontext, audioBuffer) {
         }
     });
 
+
+    Object.defineProperty(that, 'iOSEnabled', {
+        get: function() {
+            if(!that._useWebAudio) {
+                return true;
+            } else {
+                return !_iOSEnabled;
+            }
+        }
+    });
+
     _constructor(audiocontext);
 }
 
