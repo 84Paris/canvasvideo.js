@@ -16,6 +16,11 @@ This library draw video element on a canvas and sync it with the audio (from the
 * supports playbackRate
 * similar methods/events to video DOM element
 
+### Live demo ###
+
+* [Basic](http://84paris.github.io/canvasvideo.js/examples/basic.html)
+* [Autoplay without sound](http://84paris.github.io/canvasvideo.js/examples/nosound-autoplay.html)
+
 ### Featured project ###
 
 * [because-recollection.com](http://www.because-recollection.com)
@@ -186,6 +191,7 @@ var video = new CanvasVideo(src, options);
 * **readyState:** `Number` Returns the current ready state of the audio/video (only 0 or 4).
 * **seeking:** `Boolean` Returns whether the user is currently seeking in the audio/video.
 * **src:** `String/Object/Array/<video>` Returns the src of the canvasvideo.
+* **useWebAudioAPI:** `Boolean` Returns true if canvasvideo is using the web audio API.
 * **videoHeight:** `Number` Get the original video height.
 * **videoWidth:** `Number` Get the original video width.
 * **volume:** `Number` Get/set the video audio volume.
@@ -220,10 +226,10 @@ Tested in the following browsers/OS:
 
 * Doesn't work on Android devices.
 
+
 ### Releases ###
 
 * [Releases archive](https://github.com/84Paris/canvasvideo.js/releases)
-
 
 
 ### License ###
