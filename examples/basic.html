@@ -1,0 +1,112 @@
+<html>
+    <head>
+        <title>CanvasVideo.js - Basic example.</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0001, minimum-scale=1.0001, maximum-scale=1.0001, user-scalable=no">
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+    </head>
+
+    <body>
+        <div id='playButton'><img src="medias/play.png"/></div>
+        <div id='infobar'>CanvasVideo.js doesn't work on Android yet, but Android support html 5 video.</div>
+        <div id='container'>
+            <div id='interface'></div>
+            <div id='videoContainer'></div>
+        </div>
+        <div id='loader' class="loader">Loading...</div>
+        <script src="./js/utils.js"></script>
+        <script src="../bin/canvasvideo.js"></script>
+        <script>
+
+            var video;
+            var container = document.getElementById('container');
+            var firstPlay = true;
+
+            if(!Utils.isAndroid) {
+
+                var options = {
+                    id: 'video',
+                    audio: './medias/sound.mp3',
+                    bufferAudio: false,
+                    autoplay: true,
+                    xhr: false,
+                    loop: true
+                };
+
+                video = new CanvasVideo({
+                    src: './medias/video.mp4',
+                    mime: 'video/mp4'
+                }, options);
+                container.appendChild(video.element);
+
+                document.addEventListener('touchend', function(e){
+                    document.getElementById('playButton').style.display = 'none';
+                });
+
+            } else {
+
+                Utils.displayInfoBar();
+                video = document.createElement('video');
+                var s = document.createElement('source');
+                s.src = './medias/video.mp4';
+                s.mime = 'video/mp4';
+                video.appendChild(s);
+                video.loop = true;
+                video.id = 'video';
+                container.appendChild(video);
+
+                document.getElementById('playButton').style.display = 'block';
+
+                document.addEventListener('touchend', function(e){
+                    document.getElementById('playButton').style.display = 'none';
+                    video.play();
+                });
+            }
+
+            if (!Utils.isMobile) {
+                // center on desktop
+                document.getElementById('container').className = 'center';
+            } else {
+                // fullscreen on mobile
+                window.addEventListener('resize', resize);
+                resize();
+            }
+
+            video.addEventListener('timeupdate', onTimeUpdate);
+            video.addEventListener('canplaythrough', onCanPlayThrough);
+            video.addEventListener('playing', onPlaying);
+            video.addEventListener('play', onPlaying);
+            video.addEventListener('waiting', onWaiting);
+
+            function onTimeUpdate(e) {
+                document.getElementById('interface').innerHTML = Utils.timeCode(video.currentTime);
+            }
+
+            function onCanPlayThrough(e) {
+                if(video.needTouchDevice) document.getElementById('playButton').style.display = 'block';
+                showLoader(false);
+            }
+
+            function onPlaying(e) {
+                document.getElementById('playButton').style.display = 'none';
+                showLoader(false);
+            }
+
+            function onWaiting(e) {
+                showLoader(true);
+            }
+
+            function resize(e) {
+                var size = Utils.cover(579, 326);
+                video.width = size.width;
+                video.height = size.height;
+            }
+
+            function showLoader(boo) {
+                if(boo) document.getElementById('loader').style.display = 'block';
+                else document.getElementById('loader').style.display = 'none';
+            }
+
+        </script>
+    </body>
+</html>
