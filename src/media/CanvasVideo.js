@@ -705,6 +705,13 @@ function CanvasVideo(src, options) {
         }
     });
 
+    Object.defineProperty(that, 'useWebAudioAPI', {
+        get: function() {
+            if(that.options.audio && sound) return sound._useWebAudio;
+            else return false;
+        }
+    });
+
     Object.defineProperty(that, 'videoHeight', {
         get: function() {
             return video.videoHeight;
