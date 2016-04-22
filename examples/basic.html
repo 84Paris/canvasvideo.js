@@ -72,6 +72,12 @@
                 resize();
             }
 
+            function playVideo(e) {
+                document.removeEventListener('touchend', playVideo);
+                document.getElementById('playButton').style.display = 'block';
+                video.play();
+            }
+
             video.addEventListener('timeupdate', onTimeUpdate);
             video.addEventListener('canplaythrough', onCanPlayThrough);
             video.addEventListener('playing', onPlaying);
@@ -83,7 +89,10 @@
             }
 
             function onCanPlayThrough(e) {
-                if(video.needTouchDevice) document.getElementById('playButton').style.display = 'block';
+                if(video.needTouchDevice) {
+                    document.getElementById('playButton').style.display = 'block';
+                    document.addEventListener('touchend', playVideo);
+                }
                 showLoader(false);
             }
 
