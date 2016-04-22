@@ -3,7 +3,10 @@ body {
     overflow: hidden;
     margin: 0;
     height: 100%;
+    width: 100%;
     font-family: 'Open Sans', sans-serif;
+    position: relative;
+    padding: 0;
 }
 
 #video {
@@ -14,6 +17,10 @@ body {
     right: -100%;
     margin: auto;
     z-index: -1;
+}
+
+#container {
+    overflow: hidden;
 }
 
 .center {

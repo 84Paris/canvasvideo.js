@@ -2,3 +2,4 @@
 node_modules
 /debug/
 npm-debug.log
+/examples/debug.html
