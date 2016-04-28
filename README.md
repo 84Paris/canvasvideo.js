@@ -6,6 +6,8 @@ canvasvideo.js is a lightweight library to play video file in a canvas element w
 We thought canvasvideo.js to help people to create immersive video experiences on mobile devices.
 This library draw video element on a canvas and sync it with the audio (from the video file or an audio file fallback).
 
+[![NPM](https://nodei.co/npm/canvasvideo.js.png?compact=true)](https://npmjs.org/package/canvasvideo.js)
+
 ### Features ###
 
 * plays inline video file (mp4) with audio on iPhone (directly in the browser)

@@ -662,6 +662,8 @@ function CanvasVideo(src, options) {
     };
 
     function _constructor(src, options) {
+        options = options || {};
+        
         _needTouchDevice = Utils.isIOSdevice;
         // copy options
         copyOptionsFromSRC(src);
