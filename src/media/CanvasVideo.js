@@ -28,6 +28,7 @@ function CanvasVideo(src, options) {
         _xhrLoaded = 0;
     // status variables.
     var _built = false,
+        _xhrRequested = false,
         _needTouchDevice,
         _videoReady = false,
         _audioReady = false,
@@ -52,7 +53,7 @@ function CanvasVideo(src, options) {
 
     function _constructor(src, options) {
         options = options || {};
-        
+
         _needTouchDevice = Utils.isIOSdevice;
         // copy options
         copyOptionsFromSRC(src);
@@ -86,7 +87,7 @@ function CanvasVideo(src, options) {
 
 
     this.load = function() {
-        if (!_built) {
+        if (!_built && !_xhrRequested) {
             if (that.options.xhr) {
                 xhrPreload(src);
             } else {
@@ -156,7 +157,7 @@ function CanvasVideo(src, options) {
             }
         } else {
             that.options.autoplay = true;
-            if (!_built) this.load();
+            if (!_built) that.load();
         }
     }
 
@@ -288,6 +289,7 @@ function CanvasVideo(src, options) {
 
 
     function xhrPreload(src) {
+        _xhrRequested = true;
         var videoInfos = getVideoInfos(src);
         var url = videoInfos.src;
         var mime = videoInfos.mime;
@@ -342,7 +344,8 @@ function CanvasVideo(src, options) {
                 return false;
             }
         } else {
-            return false;
+            if(!that.options.xhr) return false;
+            else return true;
         }
     }
 
